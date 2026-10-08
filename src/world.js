@@ -81,8 +81,8 @@ function textBoard(g,place){
   const a=c.getContext('2d')
   a.fillStyle='#f0eadc';a.fillRect(0,0,512,200)
   a.fillStyle='#2c4545';a.textAlign='center'
-  a.font='bold 62px Arial';a.fillText(place.id==='kyoto'?'ARASHIYAMA':'STATION',256,97)
-  a.font='28px Arial';a.fillText(place.id==='kyoto'?'RANDEN TRAM · KYOTO':place.city+' LINE',256,148)
+  a.font='bold 62px Arial';a.fillText(place.id==='arashiyama'?'ARASHIYAMA':'STATION',256,97)
+  a.font='28px Arial';a.fillText(place.id==='arashiyama'?'RANDEN TRAM · KYOTO':place.city+' LINE',256,148)
   const tex=new THREE.CanvasTexture(c);tex.colorSpace=THREE.SRGBColorSpace
   const mesh=new THREE.Mesh(new THREE.PlaneGeometry(8.4,3.1),new THREE.MeshBasicMaterial({map:tex,side:THREE.DoubleSide}))
   mesh.position.set(STATION.x,9.4,STATION.z+6.15);g.add(mesh)
@@ -129,7 +129,7 @@ function addStation(g,place){
   // Open-sided tram geometry, not a sealed solid block the avatar ghosts through.
   // Door gaps in the side panels at the middle of each Randen-inspired car.
   for(let j=0;j<2;j++){
-    const zz=z-19+j*20,cx=x+25,purple=place.id==='kyoto'?'#72519b':place.accent
+    const zz=z-19+j*20,cx=x+25,purple=place.id==='arashiyama'?'#72519b':place.accent
     block(g,cx,1.12,zz,6.5,.58,18.8,'#a7aaa6')
     block(g,cx,6.32,zz,6.7,.6,19,'#35494b')
     for(const end of [-9.35,9.35])block(g,cx,3.7,zz+end,6.6,5.4,.3,'#dedbca')
@@ -253,7 +253,7 @@ export function createWorld(container,{onNearby,onBoard,onPosition,onError,onNea
   const solidFootprints=[]
   const cameraFrom=new THREE.Vector3(),cameraDesired=new THREE.Vector3(),cameraDirection=new THREE.Vector3()
   let cameraState={...CAMERA_DEFAULTS},drag=null,contextLost=false,disposed=false
-  let player={x:0,z:16},current='kyoto',near=false,nearStory=null,stopped=false,raf=0,lastTime=performance.now(),frameCount=0,paused=false
+  let player={x:0,z:16},current='arashiyama',near=false,nearStory=null,stopped=false,raf=0,lastTime=performance.now(),frameCount=0,paused=false
   // Local-only QA diagnostics. Vite strips this from production builds.
   if(import.meta.env.DEV)window.__KISEKI_QA__={
     snapshot:()=>({x:player.x,z:player.z,frameCount,paused,keys:[...keys],stopped,region:current,character:avatarAnimation.status()}),
@@ -264,10 +264,10 @@ export function createWorld(container,{onNearby,onBoard,onPosition,onError,onNea
   }
   function setRegion(id){
     const place=locationById(id);current=place.id;living=null;freeMeshes(map)
-    const bg=new THREE.Color(({kyoto:'#c2d1d0',tokyo:'#161d37',hakone:'#576389',kamakura:'#bf9386'})[id]||'#ead2b9')
+    const bg=new THREE.Color(({arashiyama:'#c2d1d0',akihabara:'#161d37',shibuya:'#576389',kyoto:'#bf9386'})[id]||'#ead2b9')
     scene.background=bg;scene.fog=new THREE.FogExp2(bg,.0038)
-    if(id==='kyoto')living=createKyotoLiving(map,{reducedMotion});else living=createJapanDistrict(map,id)
-    addStation(map,place);if(id==='kyoto')addStoryKiosks(map)
+    if(id==='arashiyama')living=createKyotoLiving(map,{reducedMotion});else living=createJapanDistrict(map,id)
+    addStation(map,place);if(id==='arashiyama')addStoryKiosks(map)
     living?.setWeather(weather)
     living?.setPerformanceMode(lowPower)
     cameraObstacles.length=0
@@ -289,7 +289,7 @@ export function createWorld(container,{onNearby,onBoard,onPosition,onError,onNea
     for(let car=0;car<2;car++)
       solidFootprints.push(rect(STATION.x+25,STATION.z-19+car*20,6.6,18.8,'tram'))
     if(living)solidFootprints.push(...living.colliders)
-    if(id==='kyoto')for(const pos of Object.values(HOTSPOT_POSITIONS))
+    if(id==='arashiyama')for(const pos of Object.values(HOTSPOT_POSITIONS))
       solidFootprints.push(rect(pos.x,pos.z,2.6,.5,'CV information sign'))
     cameraState={...CAMERA_DEFAULTS}
     player={x:0,z:16};person.g.position.set(0,.1,16)
@@ -307,7 +307,7 @@ export function createWorld(container,{onNearby,onBoard,onPosition,onError,onNea
     keys.add(k)
   }
   function pickStory(e){
-    if(paused||current!=='kyoto')return
+    if(paused||current!=='arashiyama')return
     const rect=renderer.domElement.getBoundingClientRect()
     if(!rect.width||!rect.height)return
     pointer.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1)
@@ -415,14 +415,14 @@ export function createWorld(container,{onNearby,onBoard,onPosition,onError,onNea
       camera.lookAt(pose.target.x,pose.target.y,pose.target.z)
       const n=nearStation(player,STATION)
       if(n!==near){near=n;onNearby?.(near)}
-      const h=current==='kyoto'?nearestHotspot(player):null
+      const h=current==='arashiyama'?nearestHotspot(player):null
       if(h!==nearStory){nearStory=h;onNearHotspot?.(h)}
       living?.update(dt,now,weather,player)
       if(++frameCount%8===0)onPosition?.({...player})
       ;(cinematicGraphics?composer.render():renderer.render(scene,camera))
     }catch(e){stopped=true;cancelAnimationFrame(raf);onError?.(e?.message||'Rendering stopped unexpectedly.')}
   }
-  setRegion('kyoto');resize();raf=requestAnimationFrame(frame)
+  setRegion('arashiyama');resize();raf=requestAnimationFrame(frame)
   return {
     setRegion,
     setPerformanceMode(enabled){
@@ -438,7 +438,7 @@ export function createWorld(container,{onNearby,onBoard,onPosition,onError,onNea
     setWeather(next){
       weather=next==='drizzle'?'drizzle':'golden'
       living?.setWeather(weather)
-      if(current==='kyoto'){
+      if(current==='arashiyama'){
         const sky=new THREE.Color(weather==='drizzle'?'#87969e':'#e7c8a0')
         scene.background=sky;scene.fog.color.copy(sky)
         sun.intensity=weather==='drizzle'?1.45:3
