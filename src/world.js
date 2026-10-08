@@ -10,6 +10,7 @@ import {resolveWalk,rect} from './collisionLogic.js'
 import {walkSurfaceY} from './terrainLogic.js'
 import {materialPBR} from './pbrMaterials.js'
 import {createJapanDistrict} from './japanDistricts.js'
+import {makeTraveler} from './travelerModel.js'
 import {EffectComposer} from 'three/addons/postprocessing/EffectComposer.js'
 import {RenderPass} from 'three/addons/postprocessing/RenderPass.js'
 import {UnrealBloomPass} from 'three/addons/postprocessing/UnrealBloomPass.js'
@@ -202,16 +203,6 @@ function decorate(g,id){
   }
 }
 function zRandom(r){return (r()-.5)*250}
-function avatarModel(){
-  const g=new THREE.Group()
-  const legA=new THREE.Group(),legB=new THREE.Group(),armA=new THREE.Group(),armB=new THREE.Group()
-  block(g,0,2.8,0,1.55,2.4,.88,'#3e5960')
-  ball(g,0,5.02,0,.76,'#e5c3a5')
-  ball(g,0,5.48,-.13,.75,'#293a3d')
-  for(const [leg,x] of [[legA,-.4],[legB,.4]]){leg.position.set(x,1.48,0);block(leg,0,-.6,0,.56,1.25,.67,'#2c4048');block(leg,0,-1.29,.18,.67,.35,1,'#233236');g.add(leg)}
-  for(const [arm,x] of [[armA,-.98],[armB,.98]]){arm.position.set(x,3.7,0);block(arm,0,-.71,0,.47,1.64,.56,'#3e5960');g.add(arm)}
-  return {g,legA,legB,armA,armB}
-}
 function freeMeshes(group){
   group.traverse(c=>{if(!c.isMesh&&!c.isPoints)return;c.geometry?.dispose();(Array.isArray(c.material)?c.material:[c.material]).forEach(m=>{if(!m?.userData?.persistentPBR){m?.map?.dispose();m?.dispose()}})})
   group.clear()
@@ -249,7 +240,7 @@ export function createWorld(container,{onNearby,onBoard,onPosition,onError,onNea
   const rail=createRailCinematic(scene)
   const reducedMotion=typeof window!=='undefined'&&window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches
   let living=null,weather='golden'
-  const person=avatarModel();scene.add(person.g)
+  const person=makeTraveler();scene.add(person.g)
   const circle=new THREE.Mesh(new THREE.CircleGeometry(1.8,24),new THREE.MeshBasicMaterial({color:'#000000',transparent:true,opacity:.19}))
   circle.rotation.x=-Math.PI/2;scene.add(circle)
   const keys=new Set()
