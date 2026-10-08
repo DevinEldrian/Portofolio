@@ -116,8 +116,8 @@ function lantern(g,x,z,i){
 export function createJapanDistrict(root,id){
   const g=new THREE.Group();g.name='KISEKI detailed '+id;root.add(g)
   const npcs=[],staticColliders=[]
-  const r=(()=>{let seed=id==='tokyo'?37:id==='hakone'?202:97;return()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296}})()
-  if(id==='tokyo'){
+  const r=(()=>{let seed=id==='akihabara'?37:id==='shibuya'?202:97;return()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296}})()
+  if(id==='akihabara'){
     floor(g,0,0,300,300,materialPBR('pavement',{color:'#555d69'}))
     floor(g,0,0,18,300,materialPBR('asphalt'),.08)
     floor(g,0,-39,300,24,materialPBR('asphalt'),.08)
@@ -135,7 +135,7 @@ export function createJapanDistrict(root,id){
       const x=(r()-.5)*11,z=-120+r()*240
       npcs.push(passerby(g,x,z,['#9f7189','#587e8b','#a78c63','#576881'][i%4],i))
     }
-  }else if(id==='hakone'){
+  }else if(id==='shibuya'){
     floor(g,0,0,300,300,materialPBR('pavement',{color:'#7d7781'}))
     floor(g,0,-7,150,50,materialPBR('asphalt'),.06)
     floor(g,0,0,48,170,materialPBR('asphalt'),.07)
@@ -185,7 +185,7 @@ export function createJapanDistrict(root,id){
         const phase=now*.00017+n.index*.67
         const swing=!reduced?Math.sin(now*.004+n.index)*.45:0
         // Restrict crossing NPC motions to paved public space near the world axes.
-        if(id==='hakone'){
+        if(id==='shibuya'){
           n.human.position.x=n.x+Math.sin(phase)*5
           n.human.position.z=n.z+Math.cos(phase)*4
         }else{
