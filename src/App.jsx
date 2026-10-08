@@ -3,13 +3,14 @@ import {createWorld} from './world.js'
 import {LOCATIONS,locationById,nextLocation} from './locations.js'
 import QuickView from './QuickView.jsx'
 import {getHotspot} from './portfolioContent.js'
-import {RAIL_DURATIONS,nextRailStage,skipRailStage,railStageLabel} from './livingJourney.js'
+import {RAIL_DURATIONS,railStageLabel} from './livingJourney.js'
+import {PHASES,initialJourney,nextJourneyState} from './trainJourney.js'
 
 function TrainIcon(){return <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><rect x="5" y="2" width="14" height="18" rx="4"/><path d="M5 11h14M9 7h6M8 22l2-2m4 0 2 2M8 16h.2M15.8 16h.2"/></svg>}
 function Arrow(){return <span aria-hidden="true">↗</span>}
 
 export default function App(){
-  const holder=useRef(null),world=useRef(null),travelFn=useRef(null),busy=useRef(false),timer=useRef(0),stageRef=useRef('')
+  const holder=useRef(null),world=useRef(null),travelFn=useRef(null),busy=useRef(false),timer=useRef(0),stageRef=useRef(''),journeyRef=useRef(initialJourney())
   const [here,setHere]=useState('kyoto')
   const [near,setNear]=useState(false)
   const [nearStory,setNearStory]=useState(null)
@@ -30,6 +31,7 @@ export default function App(){
   function finishJourney(){
     window.clearTimeout(timer.current)
     stageRef.current=''
+    journeyRef.current=initialJourney()
     world.current?.setJourneyPhase?.('')
     busy.current=false
     setTraveling(false)
@@ -45,10 +47,32 @@ export default function App(){
       catch(err){setError(err?.message||'Unable to load arrival.');finishJourney();return}
     }
     world.current?.setJourneyPhase?.(stage)
-    timer.current=window.setTimeout(()=>showJourneyStage(nextRailStage(stage),id),RAIL_DURATIONS[stage])
+    timer.current=window.setTimeout(()=>advanceJourney(stage,id),RAIL_DURATIONS[stage])
+  }
+  // The existing train finite-state model is authoritative; timers only mark
+  // the completion of visible avatar/cabin animations in the 3D renderer.
+  function advanceJourney(stage,id){
+    const events={boarding:'AVATAR_ENTERED',window:'ARRIVED',reveal:'DISEMBARK',exiting:'AVATAR_EXITED'}
+    journeyRef.current=nextJourneyState(journeyRef.current,{type:events[stage]})
+    const view={
+      [PHASES.BOARDING]:'boarding',
+      [PHASES.WINDOW]:'window',
+      [PHASES.REVEAL]:'reveal',
+      [PHASES.EXITING]:'exiting'
+    }[journeyRef.current.phase]
+    if(view)showJourneyStage(view,id)
+    else finishJourney()
   }
   function travel(id){
     if(busy.current||world.current?.current()===id)return
+    journeyRef.current=initialJourney()
+    for(const event of [
+      {type:'APPROACH_STATION'},
+      {type:'OPEN_ROUTE_MAP'},
+      {type:'CHOOSE_DESTINATION',destination:id},
+      {type:'BOARD'}
+    ])journeyRef.current=nextJourneyState(journeyRef.current,event)
+    if(journeyRef.current.phase!==PHASES.BOARDING)return
     busy.current=true
     setStoryId(null);setNearStory(null);setGoing(id);setTraveling(true)
     world.current?.setInputEnabled?.(false)
@@ -56,8 +80,10 @@ export default function App(){
   }
   function skipJourney(){
     if(!busy.current)return
-    const stage=skipRailStage(stageRef.current)
-    if(stage)showJourneyStage(stage,going)
+    journeyRef.current=nextJourneyState(journeyRef.current,{type:'SKIP'})
+    const phase=journeyRef.current.phase
+    if(phase===PHASES.REVEAL)showJourneyStage('reveal',going)
+    else if(phase===PHASES.EXITING)showJourneyStage('exiting',going)
   }
   travelFn.current=travel
   useEffect(()=>{
