@@ -257,12 +257,16 @@ export function createWorld(container,{onNearby,onBoard,onPosition,onError,onNea
     if(!rect.width||!rect.height)return
     pointer.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1)
     raycaster.setFromCamera(pointer,camera)
-    const hits=raycaster.intersectObjects(map.children,true)
-    for(const hit of hits){
-      let node=hit.object
-      while(node&&!node.userData?.hotspotId)node=node.parent
-      if(node?.userData?.hotspotId){onHotspot?.(node.userData.hotspotId);return}
-    }
+    // Only allow the foremost visible kiosk at reachable walking distance.
+    // Do not click signs through foreground shop walls, props or terrain.
+    const hit=raycaster.intersectObjects(map.children,true)[0]
+    if(!hit)return
+    let node=hit.object
+    while(node&&!node.userData?.hotspotId)node=node.parent
+    const id=node?.userData?.hotspotId
+    const target=HOTSPOT_POSITIONS[id]
+    if(target&&Math.hypot(target.x-player.x,target.z-player.z)<=12)
+      onHotspot?.(id)
   }
   function orbitStart(e){
     if(paused||e.button!==0)return
