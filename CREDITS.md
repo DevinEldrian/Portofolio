@@ -6,6 +6,16 @@
 - `src/pbrMaterials.js`: original offline procedural tileable base-color, normal and roughness maps used as fallback for all surfaces. These are **not photographic scans**.
 - `src/railCinematic.js`: original simplified train interior and animated story sequence, not a real branded rolling-stock replica.
 
+## Public-domain rigged humanoid asset (actual game model)
+
+- File: `public/models/quaternius-human-cc0.glb` (698,560 bytes; real glTF binary v2)
+- Original model: Quaternius CC0 game-ready humanoid; official pack: https://quaternius.com/packs/universalbasecharacters.html
+- Redistributed rigged/animated source and preparation metadata: https://github.com/UMRAM-Bilkent/supine-human-model/tree/main/assets and repository license.
+- License: CC0 1.0; check `UMRAM-Bilkent/supine-human-model/LICENSE` and original author Quaternius.
+- Import: dedicated verified GitHub Actions feature-branch importer `.github/workflows/import-cc0-avatar.yml`, validates `glTF` magic, v2 length and known source size before commit.
+- Renderer: `src/riggedCharacter.js` with `GLTFLoader`, `AnimationMixer`, proportional normalization to a 1.75m human and idle/walk/run blending.
+- IMPORTANT: game-ready rigged character is a substantial upgrade over procedural heads, but is not a photorealistic bespoke high-detail human. Further external professionally licensed character work requires Bos art approval.
+
 ## Public-domain photogrammetry textures
 A few material families **attempt to load CC0 photo-scanned PBR images at runtime** from Poly Haven over HTTPS. When an asset cannot be fetched or a browser blocks cross-origin use, KISEKI keeps the original procedural PBR fallback; it must not crash or appear textureless.
 
