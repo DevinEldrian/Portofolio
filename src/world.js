@@ -8,7 +8,7 @@ import {createKyotoLiving} from './kyotoLiving.js'
 import {createRailCinematic} from './railCinematic.js'
 import {resolveWalk,rect} from './collisionLogic.js'
 import {walkSurfaceY} from './terrainLogic.js'
-import {materialPBR} from './pbrMaterials.js'
+import {materialPBR,disposePBR} from './pbrMaterials.js'
 import {createJapanDistrict} from './japanDistricts.js'
 import {makeTraveler} from './travelerModel.js'
 import {EffectComposer} from 'three/addons/postprocessing/EffectComposer.js'
@@ -462,6 +462,8 @@ export function createWorld(container,{onNearby,onBoard,onPosition,onError,onNea
       renderer.domElement.removeEventListener('wheel',zoom)
       freeMeshes(map);freeMeshes(person.g);rail.dispose()
       circle.geometry.dispose();circle.material.dispose()
+      composer.dispose()
+      disposePBR()
       renderer.dispose();renderer.domElement.remove()
     }
   }
