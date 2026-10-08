@@ -3,12 +3,13 @@ import {createWorld} from './world.js'
 import {LOCATIONS,locationById,nextLocation} from './locations.js'
 import QuickView from './QuickView.jsx'
 import {getHotspot} from './portfolioContent.js'
+import {RAIL_DURATIONS,nextRailStage,skipRailStage,railStageLabel} from './livingJourney.js'
 
 function TrainIcon(){return <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><rect x="5" y="2" width="14" height="18" rx="4"/><path d="M5 11h14M9 7h6M8 22l2-2m4 0 2 2M8 16h.2M15.8 16h.2"/></svg>}
 function Arrow(){return <span aria-hidden="true">↗</span>}
 
 export default function App(){
-  const holder=useRef(null),world=useRef(null),travelFn=useRef(null),busy=useRef(false),timer=useRef(0)
+  const holder=useRef(null),world=useRef(null),travelFn=useRef(null),busy=useRef(false),timer=useRef(0),stageRef=useRef('')
   const [here,setHere]=useState('kyoto')
   const [near,setNear]=useState(false)
   const [nearStory,setNearStory]=useState(null)
@@ -17,6 +18,8 @@ export default function App(){
   const [pos,setPos]=useState({x:0,z:16})
   const [error,setError]=useState('')
   const [traveling,setTraveling]=useState(false)
+  const [travelStage,setTravelStage]=useState('')
+  const [weather,setWeather]=useState('golden')
   const [going,setGoing]=useState('tokyo')
   const [open,setOpen]=useState(true)
   const [guide,setGuide]=useState(false)
@@ -24,14 +27,37 @@ export default function App(){
   const closeQuickView=useCallback(()=>setQuickView(false),[])
   const active=locationById(here),next=nextLocation(here)
   const story=getHotspot(storyId)
+  function finishJourney(){
+    window.clearTimeout(timer.current)
+    stageRef.current=''
+    world.current?.setJourneyPhase?.('')
+    busy.current=false
+    setTraveling(false)
+    setTravelStage('')
+  }
+  function showJourneyStage(stage,id){
+    window.clearTimeout(timer.current)
+    stageRef.current=stage
+    setTravelStage(stage)
+    if(!stage){finishJourney();return}
+    if(stage==='reveal'){
+      try{world.current?.setRegion(id);setHere(id);setOpen(true)}
+      catch(err){setError(err?.message||'Unable to load arrival.');finishJourney();return}
+    }
+    world.current?.setJourneyPhase?.(stage)
+    timer.current=window.setTimeout(()=>showJourneyStage(nextRailStage(stage),id),RAIL_DURATIONS[stage])
+  }
   function travel(id){
     if(busy.current||world.current?.current()===id)return
-    busy.current=true;setStoryId(null);setNearStory(null);setGoing(id);setTraveling(true)
-    timer.current=window.setTimeout(()=>{
-      try{world.current?.setRegion(id);setHere(id);setOpen(true)}
-      catch(err){setError(err?.message||'This world could not load.')}
-      busy.current=false;setTraveling(false)
-    },1100)
+    busy.current=true
+    setStoryId(null);setNearStory(null);setGoing(id);setTraveling(true)
+    world.current?.setInputEnabled?.(false)
+    showJourneyStage('boarding',id)
+  }
+  function skipJourney(){
+    if(!busy.current)return
+    const stage=skipRailStage(stageRef.current)
+    if(stage)showJourneyStage(stage,going)
   }
   travelFn.current=travel
   useEffect(()=>{
@@ -42,7 +68,14 @@ export default function App(){
     })}catch(err){setError(err?.message||'3D could not start.')}
     return()=>{window.clearTimeout(timer.current);world.current?.dispose();world.current=null}
   },[])
-  useEffect(()=>{world.current?.setInputEnabled?.(!quickView&&!storyId)},[quickView,storyId])
+  useEffect(()=>{world.current?.setInputEnabled?.(!quickView&&!storyId&&!traveling)},[quickView,storyId,traveling])
+  useEffect(()=>{world.current?.setWeather?.(weather)},[weather])
+  useEffect(()=>{
+    if(!traveling)return
+    const onEscape=e=>{if(e.key==='Escape'){e.preventDefault();skipJourney()}}
+    window.addEventListener('keydown',onEscape)
+    return()=>window.removeEventListener('keydown',onEscape)
+  },[traveling,going])
   useEffect(()=>{
     if(!storyId)return
     storyFocus.current?.focus()
@@ -97,10 +130,16 @@ export default function App(){
       {here==='kamakura'&&<a className="github-cta" href="https://github.com/DevinEldrian" target="_blank" rel="noopener noreferrer">CONNECT ON GITHUB ↗</a>}
       <span className="panel-kanji" lang="ja">{active.jp}</span>
     </aside>}
+    {here==='kyoto'&&<div className="weather-mode" role="group" aria-label="Kyoto weather">
+      <span>ARASHIYAMA · AUTUMN</span>
+      <button aria-pressed={weather==='golden'} onClick={()=>setWeather('golden')}>GOLDEN HOUR</button>
+      <button aria-pressed={weather==='drizzle'} onClick={()=>setWeather('drizzle')}>LIGHT DRIZZLE</button>
+    </div>}
     {guide&&<aside className="guide" aria-label="Controls"><h3>EXPLORER'S GUIDE</h3>
       <p><kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd><span>Move avatar</span></p>
       <p><kbd>SHIFT</kbd><span>Run faster</span></p>
-      <p><kbd>E</kbd><span>Board near a station</span></p>
+      <p><kbd>E</kbd><span>Read CV kiosk / board train</span></p>
+      <p><kbd>ESC</kbd><span>Close story / skip travel</span></p>
       <p><span>Click city on right →</span><span>Travel by train</span></p>
       <small>Locations are stylized artistic interpretations of Japan.</small>
     </aside>}
@@ -115,7 +154,19 @@ export default function App(){
       </div>
     </footer>
     <div className="footer-caption">A PORTFOLIO YOU CAN WALK THROUGH <span>✳</span> MADE WITH CURIOSITY</div>
-    {traveling&&<div className="transit" role="status" aria-live="assertive"><div className="train-text"><span>NEXT STATION · 次の駅</span><TrainIcon/><h2>{locationById(going).city}</h2><p>Taking the scenic route...</p><div className="progress"><i/></div></div></div>}
+    {traveling&&<div className="transit" role="status" aria-live="polite">
+      <div className="train-text">
+        <span>JAPAN RAIL · CINEMATIC TRANSFER</span>
+        <TrainIcon/>
+        <h2>{locationById(going).city}</h2>
+        <p>{railStageLabel(travelStage)}</p>
+        <small>Scenic journey is stylized; not a direct Randen service to every destination.</small>
+        <div className="rail-phase-list" aria-label="Train trip progress">
+          {['boarding','window','reveal','exiting'].map(x=><span key={x} data-active={travelStage===x}>{x.toUpperCase()}</span>)}
+        </div>
+        <button type="button" className="skip-journey" onClick={skipJourney}>SKIP TO ARRIVAL ↗</button>
+      </div>
+    </div>}
     {error&&<div className="error-backdrop" role="alert"><div className="error-card"><small>3D ENGINE</small><h2>We lost the scenery.</h2><p>{error}</p><p>Try reloading, updating the browser or enabling hardware acceleration.</p><button onClick={()=>setQuickView(true)}>OPEN CV / QUICK VIEW ↗</button> <button onClick={()=>location.reload()}>RELOAD EXPERIENCE ↗</button></div></div>}
     {story&&<div className="story-shade" onMouseDown={e=>{if(e.target===e.currentTarget)setStoryId(null)}}>
       <aside className="story-sheet" role="dialog" aria-modal="true" aria-label={story.label} tabIndex={-1} ref={storyFocus}>
