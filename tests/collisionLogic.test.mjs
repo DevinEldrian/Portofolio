@@ -5,7 +5,7 @@ import {AVATAR_RADIUS,rect,circle,overlapsCircle,resolveWalk} from '../src/colli
 test('cannot cross shop wall even sprinting in a low-FPS frame',()=>{
  const wall=rect(4,0,1,15,'shop')
  const result=resolveWalk({x:0,z:0},{x:12,z:0},[wall])
- assert.ok(result.x<2.7,`crossed solid wall at x=${result.x}`)
+ assert.ok(result.x<3.5-AVATAR_RADIUS+.02,`crossed solid wall at x=${result.x}`)
  assert.equal(result.blocked,true)
 })
 test('slides along walls rather than freezing diagonal movement',()=>{
