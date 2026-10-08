@@ -7,6 +7,7 @@ import {CAMERA_DEFAULTS,cameraAfterInput,cameraPose} from './cameraLogic.js'
 import {createKyotoLiving} from './kyotoLiving.js'
 import {createRailCinematic} from './railCinematic.js'
 import {resolveWalk,rect} from './collisionLogic.js'
+import {walkSurfaceY} from './terrainLogic.js'
 
 const STATION={x:20,z:-10}
 const EMPTY_KEYS=new Set()
@@ -206,7 +207,7 @@ function avatarModel(){
   return {g,legA,legB,armA,armB}
 }
 function freeMeshes(group){
-  group.traverse(c=>{if(!c.isMesh)return;c.geometry?.dispose();(Array.isArray(c.material)?c.material:[c.material]).forEach(m=>{m?.map?.dispose();m?.dispose()})})
+  group.traverse(c=>{if(!c.isMesh&&!c.isPoints)return;c.geometry?.dispose();(Array.isArray(c.material)?c.material:[c.material]).forEach(m=>{m?.map?.dispose();m?.dispose()})})
   group.clear()
 }
 
@@ -375,12 +376,13 @@ export function createWorld(container,{onNearby,onBoard,onPosition,onError,onNea
       const next=resolveWalk(player,p,footprints)
       const walked=p.moving&&Math.hypot(next.x-player.x,next.z-player.z)>.002
       player={x:next.x,z:next.z}
-      person.g.position.set(player.x,.13+(walked?Math.abs(Math.sin(now*.014))*.12:0),player.z)
+      const footing=walkSurfaceY(current,player)
+      person.g.position.set(player.x,footing+(walked?Math.abs(Math.sin(now*.014))*.12:0),player.z)
       if(p.heading!==null){const a=Math.atan2(Math.sin(p.heading-person.g.rotation.y),Math.cos(p.heading-person.g.rotation.y));person.g.rotation.y+=a*.16}
       const swing=walked?Math.sin(now*.012)*.44:0
       person.legA.rotation.x=swing;person.legB.rotation.x=-swing
       person.armA.rotation.x=-swing*.75;person.armB.rotation.x=swing*.75
-      circle.position.set(player.x,.08,player.z)
+      circle.position.set(player.x,Math.max(.08,footing-.05),player.z)
       const pose=cameraPose({x:player.x,y:3,z:player.z},cameraState)
       cameraFrom.set(pose.target.x,pose.target.y,pose.target.z)
       cameraDesired.set(pose.position.x,pose.position.y,pose.position.z)
