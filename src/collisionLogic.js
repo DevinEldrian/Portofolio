@@ -4,7 +4,7 @@
  * Step splitting prevents sprinting through thin walls at low frame rates.
  */
 import {LIMIT} from './gameLogic.js'
-export const AVATAR_RADIUS=0.85
+export const AVATAR_RADIUS=0.38
 const isFinitePoint=p=>Number.isFinite(p?.x)&&Number.isFinite(p?.z)
 const cl=(x,a,b)=>Math.max(a,Math.min(b,x))
 export const rect=(x,z,w,d,id='structure')=>Object.freeze({shape:'rect',x,z,w,d,id})
