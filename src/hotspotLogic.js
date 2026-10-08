@@ -1,7 +1,7 @@
 // Provisional game coordinates; final alignment follows X1 geography blockout.
 export const HOTSPOT_POSITIONS=Object.freeze({
   'street-eclaim':Object.freeze({x:-5,z:14}),
-  'riverside-treasury':Object.freeze({x:-8,z:-44}),
+  'riverside-treasury':Object.freeze({x:-8,z:50}),
   'forest-values':Object.freeze({x:7,z:-75})
 })
 export function nearestHotspot(player,radius=8){
