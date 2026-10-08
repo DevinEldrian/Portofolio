@@ -75,7 +75,7 @@
 - Station: wait near platform line → look at signage → queue → board door after safe opening; no walking through cars.
 - Rickshaw/transport (optional): pass route loop, yield to avatar and pedestrians; no physically impossible motion.
 
-**Budget proposal** (subject to XO measured performance): in first viewport show 6–12 *believably animated* NPCs; further background pedestrians can use simple impostors or reduced animation. Do not force fixed counts if FPS suffers; visible meaningful variation matters more than density.
+**Budget proposal** (subject to XO measured performance): in first viewport show 4–8 *believably animated* NPCs; further background pedestrians can use simple impostors or reduced animation. Do not force fixed counts if FPS suffers; visible meaningful variation matters more than density.
 
 **Game logic:** bounded navigation graph/navmesh, waypoint paths, priority spaces near kiosk interaction radius, obstacle avoidance or steering, simple LOD update rates, pooled mesh instancing for background, distinct animation clips `idle`, `walk`, `browse`, `wave`, `photo`, `board`. Avatar never collides or sticks permanently against crowds; accessibility setting reduces crowd activity.
 
@@ -88,7 +88,7 @@
 ### Ambience / Weather matrix
 | World | Lighting + weather anchor | Ambient sound | Moving world |
 |-------|---------------------------|---------------|--------------|
-| **Kyoto P0** | warm autumn **golden-hour**, gentle breeze, slightly hazy mountains; OPTIONAL overcast toggle | Randen bell/wheels, footsteps, shop voices, river water, birds, bamboo creak | moving leaves, water, noren cloth, distant tram arrival |
+| **Kyoto P0** | warm autumn **golden-hour**, gentle breeze, slightly hazy mountains; a **second testable overcast/light-drizzle mode** (manual toggle is acceptable) | Randen bell/wheels, footsteps, shop voices, river water, birds, bamboo creak | moving leaves, water, noren cloth, distant tram arrival |
 | **Akihabara P1** | vivid daytime shop displays or post-rain evening, controlled wet reflections | JR/train hum, arcade sounds from doorways, chatter, electronics hum | opening shop shutters, rotating displays, customers exchanging goods |
 | **Shibuya P1** | blue-hour/evening, dynamic storefront lighting, optional light rain | crossing signal tones, traffic, crowd waves, short storefront/club bleed | crowd batches synchronized to traffic light, moving buses/taxis, giant screen loops |
 
@@ -101,6 +101,8 @@ Every hotspot must be readable in 3 layers:
 1. **World clue** (5–10 words, e.g. "Behind each interface is a user's trust"); icon in world with 2–4 m recognition, halo subtle and no giant game quest exclamation.
 2. **Story panel** (headline + dates/role if verified + 40–90 word personal story: *context → action → impact/learning*); use semantic HTML and accessible contrast.
 3. **Proof / call-to-action** (3 short evidence bullets from approved CV; optional linked work/case study only if publicly shareable; `Next chapter` or `View all CV`).
+
+**Education factual correction (Agent Z / Bos CV directive):** The existing XO dataset's phrase *“AI for Business major”* is incorrect and must not ship. Approved-for-design factual baseline from Agent Z: **Master of Information Technology, focus on AI (Feb 2026–present)**; **Bachelor of Information Technology, Business Information Technology major (Sep 2021–Dec 2025)**. XO must reconcile all remaining dates, employers, skills and any public wording with Bos before release. Provide About/Education directly in Quick View and use it as context in the first kiosk.
 
 **Concrete beats, matching XO source:**
 - `street-eclaim`, shop/street kiosk near arrival: **"Learning to Build"** — E-Claim internship, UI/frontend improvement, functional retests; metaphor: thoughtful design at shop threshold. **Not** a bank system recreation.
@@ -172,10 +174,10 @@ These are **P1 pre-production concept briefs**, not approval to build ahead of A
 9. **No merge to production auto-deploy branch nor production deployment without explicit Bos approval.** Design docs stored in isolated design branch.
 
 ### Explicit requests to Agent Z
-- **Approve/revise** Randen spawn and **autumn golden-hour** weather anchor.
-- Resolve whether P0 can include **3 existing CV hotspots** (XO has 3 records) versus contractual requirement of 2 kiosks: recommendation **2 kiosks + 1 quiet neutral forest marker**, with no extra data fabrication.
+- **Agent Z has approved** Randen primary arrival, **autumn golden-hour** anchor, and secondary overcast/light-drizzle mode; XO should follow those decisions without waiting for another design choice.
+- **Agent Z has now approved the P0 interpretation:** **2 kiosks + 1 optional quiet neutral forest reflection marker** using XO's three existing hotspot IDs, pending factual CV corrections and Bos content approval.
 - Confirm visual checkpoint **before** materials and **after** animated scene.
-- Confirm specific P0 vs P1 scope, simulation performance tier, and train 12–25s first-time cutscene budget.
+- Confirm measured NPC/asset budgets and actual timing of the full walking/boarding/window/exiting travel sequence (design suggestion 12–25s, always skippable); P1 only after P0/Bos approval.
 - Request from Bos final approval of exact CV narrative and any public project screenshots before release.
 
 ## Current state and caveat
