@@ -117,16 +117,32 @@ function addStation(g,place){
   ground(g,x+25,z,10,140,'#585d59',.13)
   for(let dx of [21.8,27.9])block(g,x+dx-0,.35,z,.3,.28,136,'#c3ad98')
   for(let zz=-65;zz<=65;zz+=4.5)block(g,x+25,.23,z+zz,8,.23,.6,'#7e6c59')
+  // Open-sided tram geometry, not a sealed solid block the avatar ghosts through.
+  // Door gaps in the side panels at the middle of each Randen-inspired car.
   for(let j=0;j<2;j++){
-    const zz=z-19+j*20
-    block(g,x+25,3.3,zz,6.4,5.7,18.8,'#ebebdd')
-    block(g,x+25,6.32,zz,6.6,.6,19,'#35494b')
-    block(g,x+25,2.35,zz,6.6,1.2,19,place.id==='kyoto'?'#72519b':place.accent)
-    for(let wz of [-6,-2,2,6]){
-      block(g,x+21.7,4.46,zz+wz,.08,1.5,2.1,'#8cbdc0')
-      block(g,x+28.3,4.46,zz+wz,.08,1.5,2.1,'#8cbdc0')
+    const zz=z-19+j*20,cx=x+25,purple=place.id==='kyoto'?'#72519b':place.accent
+    block(g,cx,1.12,zz,6.5,.58,18.8,'#a7aaa6')
+    block(g,cx,6.32,zz,6.7,.6,19,'#35494b')
+    for(const end of [-9.35,9.35])block(g,cx,3.7,zz+end,6.6,5.4,.3,'#dedbca')
+    for(const side of [-1,1]){
+      const edge=cx+side*3.16
+      // Mid-car 5.2 game-unit door aperture remains visibly open.
+      for(const d of [-6,6]){
+        block(g,edge,3.45,zz+d,.28,4.4,6.4,'#e6e4d7')
+        block(g,edge,1.85,zz+d, .32,1.15,6.5,purple)
+        const pane=block(g,edge+side*.07,4.4,zz+d,.12,1.3,4.8,
+          mat('#97c3c9',{transparent:true,opacity:.55,metalness:.09}))
+        pane.castShadow=false
+      }
+      block(g,edge,6,zz,.4,.28,5.4,purple)
+      for(const d of [-2.8,2.8])cylinder(g,edge+side*.12,3.65,zz+d,.08,.08,4.6,'#dfd1bc')
     }
-    for(let wz of [-6.2,6.2])for(let wx of [23,27])cylinder(g,x+wx,.59,zz+wz,.82,.82,.6,'#29383b')
+    for(const d of [-6,6]){
+      block(g,cx-1.9,1.85,zz+d,.92,1.2,4,'#6c798a')
+      block(g,cx+1.9,1.85,zz+d,.92,1.2,4,'#6c798a')
+    }
+    for(let wz of [-6.2,6.2])for(let wx of [23,27])
+      cylinder(g,x+wx,.59,zz+wz,.82,.82,.6,'#29383b')
   }
   ground(g,9,7,9,30,'#b7ad98',.09)
 }
@@ -250,6 +266,10 @@ export function createWorld(container,{onNearby,onBoard,onPosition,onError,onNea
           solidFootprints.push(rect((bounds.max.x+bounds.min.x)/2,(bounds.max.z+bounds.min.z)/2,width,depth,'solid building'))
       }
     })
+    // Keep exploration avatars off the track and inside the station boarding
+    // trigger; the cinematic explicitly takes control once Boarding starts.
+    for(let car=0;car<2;car++)
+      solidFootprints.push(rect(STATION.x+25,STATION.z-19+car*20,6.6,18.8,'tram'))
     if(living)solidFootprints.push(...living.colliders)
     if(id==='kyoto')for(const pos of Object.values(HOTSPOT_POSITIONS))
       solidFootprints.push(rect(pos.x,pos.z,2.6,.5,'CV information sign'))
