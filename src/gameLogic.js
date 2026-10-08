@@ -1,4 +1,4 @@
-export const LIMIT = 95
+export const LIMIT = 120
 export const clamp = (x,min,max) => Number.isFinite(x)?Math.max(min,Math.min(max,x)):min
 export const sanitizePosition = pos => ({x: Number.isFinite(pos?.x)?clamp(pos.x,-LIMIT,LIMIT):0,z: Number.isFinite(pos?.z)?clamp(pos.z,-LIMIT,LIMIT):0})
 export function move(position,keys,dt){
