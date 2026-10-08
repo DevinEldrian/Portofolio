@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import {materialPBR} from './pbrMaterials.js'
+import {createRegionExpansion} from './regionExpansion.js'
 import {circle,rect} from './collisionLogic.js'
 
 const mat=(c,p={})=>new THREE.MeshPhysicalMaterial({color:c,roughness:.65,metalness:.08,...p})
@@ -115,10 +116,12 @@ function lantern(g,x,z,i){
 }
 export function createJapanDistrict(root,id){
   const g=new THREE.Group();g.name='KISEKI detailed '+id;root.add(g)
+  const expansion=createRegionExpansion(root,id)
+  staticColliders.push(...expansion.colliders)
   const npcs=[],staticColliders=[]
   const r=(()=>{let seed=id==='akihabara'?37:id==='shibuya'?202:97;return()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296}})()
   if(id==='akihabara'){
-    floor(g,0,0,300,300,materialPBR('pavement',{color:'#555d69'}))
+    floor(g,0,0,520,520,materialPBR('pavement',{color:'#555d69'}))
     floor(g,0,0,18,300,materialPBR('asphalt'),.08)
     floor(g,0,-39,300,24,materialPBR('asphalt'),.08)
     for(let z=-121;z<125;z+=11)makeBox(g,0,.1,z,.65,.05,5,mat('#d4d1d0'))
@@ -136,7 +139,7 @@ export function createJapanDistrict(root,id){
       npcs.push(passerby(g,x,z,['#9f7189','#587e8b','#a78c63','#576881'][i%4],i))
     }
   }else if(id==='shibuya'){
-    floor(g,0,0,300,300,materialPBR('pavement',{color:'#7d7781'}))
+    floor(g,0,0,520,520,materialPBR('pavement',{color:'#7d7781'}))
     floor(g,0,-7,150,50,materialPBR('asphalt'),.06)
     floor(g,0,0,48,170,materialPBR('asphalt'),.07)
     // The diagonal scramble is walkable, textured, and physically 3D.
@@ -161,7 +164,7 @@ export function createJapanDistrict(root,id){
       signpost.castShadow=false
     }
   }else{
-    floor(g,0,0,300,300,materialPBR('stucco',{color:'#7b8a70'}))
+    floor(g,0,0,520,520,materialPBR('stucco',{color:'#7b8a70'}))
     floor(g,0,0,13,260,materialPBR('cobble'),.08)
     for(let j=0;j<15;j++){
       const z=-121+j*17
