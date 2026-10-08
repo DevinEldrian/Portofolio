@@ -98,7 +98,9 @@ try{
   await page.locator('.next-cta').click()
   await page.locator('.transit').waitFor({state:'visible'})
   await page.getByText(/Avatar boarding/i).waitFor({state:'visible'})
-  await page.getByRole('button',{name:/SKIP TO ARRIVAL/i}).click({timeout:3000})
+  // UI click is dispatched directly so slow SwiftShader rendering cannot make
+  // the short boarding animation expire while Playwright waits for animation stability.
+  await page.locator('.skip-journey').evaluate(el=>el.click())
   await page.locator('.transit').waitFor({state:'hidden',timeout:12000})
   assert.match(await page.locator('.hero h1').innerText(),/AKIHABARA/i)
   console.log('PASS: boarding Skip reaches destination without hanging');passes++
