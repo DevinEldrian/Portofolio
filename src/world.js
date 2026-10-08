@@ -9,6 +9,7 @@ import {createRailCinematic} from './railCinematic.js'
 import {resolveWalk,rect} from './collisionLogic.js'
 import {walkSurfaceY} from './terrainLogic.js'
 import {materialPBR} from './pbrMaterials.js'
+import {createJapanDistrict} from './japanDistricts.js'
 import {EffectComposer} from 'three/addons/postprocessing/EffectComposer.js'
 import {RenderPass} from 'three/addons/postprocessing/RenderPass.js'
 import {UnrealBloomPass} from 'three/addons/postprocessing/UnrealBloomPass.js'
@@ -270,9 +271,9 @@ export function createWorld(container,{onNearby,onBoard,onPosition,onError,onNea
   }
   function setRegion(id){
     const place=locationById(id);current=place.id;living=null;freeMeshes(map)
-    const bg=new THREE.Color(({kyoto:'#ead2b9',tokyo:'#b9b9c1',hakone:'#c3d2c6',kamakura:'#cadfe0'})[id]||'#ead2b9')
+    const bg=new THREE.Color(({kyoto:'#c2d1d0',tokyo:'#161d37',hakone:'#576389',kamakura:'#bf9386'})[id]||'#ead2b9')
     scene.background=bg;scene.fog=new THREE.FogExp2(bg,.0038)
-    if(id==='kyoto')living=createKyotoLiving(map,{reducedMotion});else decorate(map,id)
+    if(id==='kyoto')living=createKyotoLiving(map,{reducedMotion});else living=createJapanDistrict(map,id)
     addStation(map,place);if(id==='kyoto')addStoryKiosks(map)
     living?.setWeather(weather)
     living?.setPerformanceMode(lowPower)
