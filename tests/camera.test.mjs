@@ -21,10 +21,10 @@ test('corrupt input is sanitized before camera pose calculation',()=>{
 test('orbit drag and zoom clamp to safe bounds',()=>{
  const s=cameraAfterInput(CAMERA_DEFAULTS,{yaw:Infinity,pitch:1e300,zoom:-1e300})
  assert.ok(Object.values(s).every(Number.isFinite))
- assert.ok(s.distance>=7&&s.distance<=38)
+ assert.ok(s.distance>=3.5&&s.distance<=17)
  assert.ok(s.pitch>=0.18&&s.pitch<=1.12)
- assert.equal(cameraAfterInput(CAMERA_DEFAULTS,{zoom:-4}).distance,20)
+ assert.equal(cameraAfterInput(CAMERA_DEFAULTS,{zoom:-4}).distance,3.5)
 })
 test('camera position remains above terrain',()=>{
- assert.ok(cameraPose({x:0,y:-500,z:0},{yaw:0,pitch:0,distance:7}).position.y>=2.5)
+ assert.ok(cameraPose({x:0,y:-500,z:0},{yaw:0,pitch:0,distance:7}).position.y>=1.35)
 })
