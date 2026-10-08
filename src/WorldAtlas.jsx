@@ -3,10 +3,10 @@ import {createAtlas} from './atlasScene.js'
 import './atlas.css'
 
 export const WORLD_DESTINATIONS=Object.freeze([
-  {name:'AKIHABARA',ja:'秋葉原',subtitle:'NEON / TECHNOLOGY / SKILLS',id:'tokyo',number:'01',description:'A living district of electronics, arcades and original neon signs. Skills, learning and digital craft.'},
-  {name:'SHIBUYA',ja:'渋谷',subtitle:'SCRAMBLE / MOVEMENT / PROJECTS',id:'hakone',number:'02',description:'A metropolis in motion: the famous diagonal crossing, traffic, luminous screens and animated crowds.'},
-  {name:'ARASHIYAMA',ja:'嵐山',subtitle:'BAMBOO / RIVER / REFLECTION',id:'kyoto',number:'03',description:'Morning mist, the Sagano bamboo path, Katsura water and Togetsukyo-inspired bridge. Read the CV stories along the route.'},
-  {name:'KYOTO',ja:'京都',subtitle:'HERITAGE / CRAFT / EXPERIENCE',id:'kamakura',number:'04',description:'Atmospheric machiya streets, tiled roofs, warm lanterns, stone paths and a journey through craft and career.'}
+  {name:'AKIHABARA',ja:'秋葉原',subtitle:'NEON / TECHNOLOGY / SKILLS',id:'akihabara',number:'01',description:'A living district of electronics, arcades and original neon signs. Skills, learning and digital craft.'},
+  {name:'SHIBUYA',ja:'渋谷',subtitle:'SCRAMBLE / MOVEMENT / PROJECTS',id:'shibuya',number:'02',description:'A metropolis in motion: the famous diagonal crossing, traffic, luminous screens and animated crowds.'},
+  {name:'ARASHIYAMA',ja:'嵐山',subtitle:'BAMBOO / RIVER / REFLECTION',id:'arashiyama',number:'03',description:'Morning mist, the Sagano bamboo path, Katsura water and Togetsukyo-inspired bridge. Read the CV stories along the route.'},
+  {name:'KYOTO',ja:'京都',subtitle:'HERITAGE / CRAFT / EXPERIENCE',id:'kyoto',number:'04',description:'Atmospheric machiya streets, tiled roofs, warm lanterns, stone paths and a journey through craft and career.'}
 ])
 
 export default function WorldAtlas({onStart,onQuickView}){
