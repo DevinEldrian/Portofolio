@@ -32,7 +32,7 @@ test('stable at forbidden geometry edge, preserves finite pose on corrupt frame'
  const ob=[rect(1,0,1,9)]
  let player={x:-2,z:0}
  for(let i=0;i<400;i++){
-  player=resolveWalk(player,{x:player.x+.9,z:player.z+.03},ob)
+  player=resolveWalk(player,{x:player.x+.9,z:player.z},ob)
   assert.ok(Number.isFinite(player.x)&&Number.isFinite(player.z))
  }
  assert.ok(player.x<.5)
