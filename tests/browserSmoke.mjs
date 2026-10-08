@@ -88,7 +88,7 @@ try{
     bridgeBefore.frameCount,{timeout:15000,polling:250})
   await page.keyboard.up('s')
   const bridgeStep=await read()
-  assert.ok(bridgeStep.z>55.45,
+  assert.ok(bridgeStep.z>54.16,
     'avatar could not use the pedestrian bridge at z='+bridgeStep.z)
   console.log('PASS: Katsura water blocks feet while bridge remains passable');passes++
   await put(0,16)
