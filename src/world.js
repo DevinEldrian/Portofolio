@@ -388,7 +388,7 @@ export function createWorld(container,{onNearby,onBoard,onPosition,onError,onNea
     try{
       if(rail.update(dt,now,camera,person,{reducedMotion})){
         living?.update(dt,now,weather,player)
-        (cinematicGraphics?composer.render():renderer.render(scene,camera))
+        ;(cinematicGraphics?composer.render():renderer.render(scene,camera))
         return
       }
       const p=move(player,paused?EMPTY_KEYS:keys,dt)
@@ -425,7 +425,7 @@ export function createWorld(container,{onNearby,onBoard,onPosition,onError,onNea
       if(h!==nearStory){nearStory=h;onNearHotspot?.(h)}
       living?.update(dt,now,weather,player)
       if(++frameCount%8===0)onPosition?.({...player})
-      (cinematicGraphics?composer.render():renderer.render(scene,camera))
+      ;(cinematicGraphics?composer.render():renderer.render(scene,camera))
     }catch(e){stopped=true;cancelAnimationFrame(raf);onError?.(e?.message||'Rendering stopped unexpectedly.')}
   }
   setRegion('kyoto');resize();raf=requestAnimationFrame(frame)
