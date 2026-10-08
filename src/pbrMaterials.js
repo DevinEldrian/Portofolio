@@ -10,6 +10,47 @@ import * as THREE from 'three'
  */
 const sources=new Map()
 const colored=new Map()
+const scanned=new Map()
+const scansInFlight=new Set()
+// Poly Haven CC0 photographic scans: downloaded progressively after a zone loads.
+// If offline/CDN unavailable, the procedurally generated PBR triplet stays active.
+const scans={
+  cobble:'rock_tile_floor',
+  agedWood:'wood_plank_wall',
+  pavement:'worn_patterned_pavers'
+}
+function upgradeKindWithPhotoScans(kind){
+  const id=scans[kind]
+  if(!id||scansInFlight.has(kind))return
+  scansInFlight.add(kind)
+  const prefix='https://dl.polyhaven.org/file/ph-assets/Textures/png/2k/'+id+'/'+id
+  const loader=new THREE.TextureLoader()
+  const urls=[prefix+'_diff_2k.png',prefix+'_nor_gl_2k.png',prefix+'_arm_2k.png']
+  Promise.all(urls.map(url=>new Promise((resolve,reject)=>
+    loader.load(url,resolve,undefined,reject)
+  ))).then(textures=>{
+    const spec=defaults[kind]
+    for(let i=0;i<textures.length;i++){
+      const tex=textures[i]
+      tex.wrapS=tex.wrapT=THREE.RepeatWrapping
+      tex.repeat.set(...spec.repeat)
+      tex.anisotropy=12
+      tex.colorSpace=i===0?THREE.SRGBColorSpace:THREE.NoColorSpace
+      tex.needsUpdate=true
+    }
+    scanned.set(kind,textures)
+    for(const material of colored.values()){
+      if(material.userData.pbrKind!==kind)continue
+      material.map=textures[0]
+      material.normalMap=textures[1]
+      // Poly Haven ARM maps pack roughness in the GREEN channel.
+      material.roughnessMap=textures[2]
+      material.needsUpdate=true
+    }
+  }).catch(()=>{
+    // Offline-safe: do not replace working PBR maps with broken images.
+  })
+}
 const defaults={
   cobble:{size:512,color:[122,122,115],noise:26,relief:.82,roughness:.9,metalness:0,repeat:[7,17]},
   agedWood:{size:512,color:[112,77,54],noise:36,relief:.68,roughness:.86,metalness:0,repeat:[3,2]},
@@ -134,7 +175,13 @@ export function materialPBR(kind,props={}){
     ...props
   })
   m.userData.persistentPBR=true
+  m.userData.pbrKind=kind
   colored.set(id,m)
+  if(scanned.has(kind)){
+    const [diffuse,normal,arm]=scanned.get(kind)
+    m.map=diffuse;m.normalMap=normal;m.roughnessMap=arm
+    m.needsUpdate=true
+  }else upgradeKindWithPhotoScans(kind)
   return m
 }
 export function environmentalMaterial(name){return materialPBR(name)}
@@ -145,5 +192,6 @@ export function setTextureQuality({anisotropy=8}={}){
 export function disposePBR(){
   for(const value of sources.values())for(const tex of Object.values(value))tex.dispose()
   for(const mat of colored.values())mat.dispose()
-  sources.clear();colored.clear()
+  for(const textures of scanned.values())for(const tex of textures)tex.dispose()
+  scanned.clear();scansInFlight.clear();sources.clear();colored.clear()
 }
