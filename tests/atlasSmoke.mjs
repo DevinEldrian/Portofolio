@@ -22,6 +22,7 @@ try{
   await page.getByRole('button',{name:/AKIHABARA.*NEON/i}).click()
   await page.locator('.canvas canvas').waitFor({state:'visible',timeout:30000})
   await page.getByRole('heading',{name:/AKIHABARA/i}).waitFor({state:'visible'})
+  if(await page.locator('.error-backdrop').count())console.error('ATLAS ENTRY ERROR:',await page.locator('.error-backdrop').innerText())
   assert.equal(await page.locator('.error-backdrop').count(),0)
   await page.screenshot({path:'atlas-artifacts/entered-akihabara-3d.png'})
   console.log('PASS: Tokyo destination enters actual interactive Akihabara world')
