@@ -1,5 +1,6 @@
 import React,{useEffect,useRef,useState} from 'react'
 import {createAtlas} from './atlasScene.js'
+import './atlas.css'
 
 export const WORLD_DESTINATIONS=Object.freeze([
   {name:'AKIHABARA',ja:'秋葉原',subtitle:'NEON / TECHNOLOGY / SKILLS',id:'tokyo',number:'01',description:'A living district of electronics, arcades and original neon signs. Skills, learning and digital craft.'},
