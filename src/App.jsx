@@ -1,6 +1,7 @@
 import React,{useCallback,useEffect,useRef,useState} from 'react'
 import {createWorld} from './world.js'
 import WorldAtlas from './WorldAtlas.jsx'
+import './immersive.css'
 import {LOCATIONS,locationById,nextLocation} from './locations.js'
 import QuickView from './QuickView.jsx'
 import {getHotspot} from './portfolioContent.js'
@@ -13,7 +14,7 @@ function Arrow(){return <span aria-hidden="true">↗</span>}
 export default function App(){
   const holder=useRef(null),world=useRef(null),travelFn=useRef(null),busy=useRef(false),timer=useRef(0),stageRef=useRef(''),journeyRef=useRef(initialJourney())
   const [here,setHere]=useState('arashiyama')
-  const [landing,setLanding]=useState(()=>typeof window!=='undefined'&&!new URLSearchParams(window.location.search).has('play'))
+  const [landing,setLanding]=useState(()=>typeof window!=='undefined'&&new URLSearchParams(window.location.search).has('atlas'))
   const [firstStop,setFirstStop]=useState('arashiyama')
   const [near,setNear]=useState(false)
   const [nearStory,setNearStory]=useState(null)
@@ -26,7 +27,7 @@ export default function App(){
   const [weather,setWeather]=useState('golden')
   const [lowGraphics,setLowGraphics]=useState(()=>typeof window!=='undefined'&&window.matchMedia('(max-width: 760px)').matches)
   const [going,setGoing]=useState('akihabara')
-  const [open,setOpen]=useState(true)
+  const [open,setOpen]=useState(false)
   const [guide,setGuide]=useState(false)
   const [quickView,setQuickView]=useState(false)
   const closeQuickView=useCallback(()=>setQuickView(false),[])
@@ -136,7 +137,7 @@ export default function App(){
         <span className="brand-symbol" lang="ja">旅</span><span><strong>KISEKI<span className="brand-period">.</span></strong><small>THE WORLD OF DEVIN ELDRIAN WIJAYA</small></span>
       </a>
       <div className="header-mode"><i/> WORLD EXPLORER <span>/</span> JAPAN 2026</div>
-      <div className="qv-header-actions"><button className="qv-open" onClick={()=>setQuickView(true)}>QUICK VIEW ↗</button><button className="guide-toggle" onClick={()=>setGuide(x=>!x)}>{guide?'CLOSE GUIDE':'HOW TO PLAY'} <Arrow/></button></div>
+      <div className="qv-header-actions"><button className="qv-open" onClick={()=>setQuickView(true)}>QUICK VIEW ↗</button><button className="guide-toggle" onClick={()=>{setLanding(true);setOpen(false);setGuide(false)}}>WORLD MAP ↗</button><button className="guide-toggle" onClick={()=>setGuide(x=>!x)}>{guide?'CLOSE GUIDE':'HOW TO PLAY'} <Arrow/></button></div>
     </header>
     <main className="main">
       <section className="hero" aria-live="polite">
