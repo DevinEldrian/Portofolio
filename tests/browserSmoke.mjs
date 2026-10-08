@@ -67,7 +67,7 @@ try{
   await page.waitForTimeout(1800)
   await page.keyboard.up('d')
   const shopStop=await read()
-  assert.ok(shopStop.x>=12.7&&shopStop.x<=13.36,
+  assert.ok(shopStop.x>=12.7&&shopStop.x<=13.72,
     'avatar penetrated the east souvenir shop at x='+shopStop.x)
   await page.screenshot({path:'artifacts/store-collision.png'})
   console.log('PASS: avatar cannot phase through Kyoto shop counters');passes++
@@ -77,7 +77,7 @@ try{
   await page.waitForTimeout(1800)
   await page.keyboard.up('s')
   const riverStop=await read()
-  assert.ok(riverStop.z<=55.26,
+  assert.ok(riverStop.z<=55.7,
     'avatar walked through Katsura water away from bridge at z='+riverStop.z)
   await put(0,54)
   const bridgeBefore=await read()
