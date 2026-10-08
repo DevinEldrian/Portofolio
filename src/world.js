@@ -8,6 +8,11 @@ import {createKyotoLiving} from './kyotoLiving.js'
 import {createRailCinematic} from './railCinematic.js'
 import {resolveWalk,rect} from './collisionLogic.js'
 import {walkSurfaceY} from './terrainLogic.js'
+import {materialPBR} from './pbrMaterials.js'
+import {EffectComposer} from 'three/addons/postprocessing/EffectComposer.js'
+import {RenderPass} from 'three/addons/postprocessing/RenderPass.js'
+import {UnrealBloomPass} from 'three/addons/postprocessing/UnrealBloomPass.js'
+import {OutputPass} from 'three/addons/postprocessing/OutputPass.js'
 
 const STATION={x:20,z:-10}
 const EMPTY_KEYS=new Set()
@@ -19,7 +24,7 @@ function block(g,x,y,z,w,h,d,color){
   mesh.position.set(x,y,z);mesh.castShadow=true;mesh.receiveShadow=true;g.add(mesh);return mesh
 }
 function ground(g,x,z,w,d,color,y=.01){
-  const mesh=new THREE.Mesh(new THREE.PlaneGeometry(w,d),mat(color))
+  const mesh=new THREE.Mesh(new THREE.PlaneGeometry(w,d),typeof color==='string'?mat(color):color)
   mesh.rotation.x=-Math.PI/2;mesh.position.set(x,y,z);mesh.receiveShadow=true;g.add(mesh);return mesh
 }
 function ball(g,x,y,z,r,color){
@@ -108,14 +113,14 @@ function addStoryKiosks(g){
 }
 function addStation(g,place){
   const {x,z}=STATION
-  ground(g,x,z,28,18,'#b5ac9b',.14)
-  const stationWall=block(g,x,3.3,z,22,6.6,12,'#e4ddcd');stationWall.userData.cameraBlocker=true
-  block(g,x,7.4,z,25,1.45,14,'#35494b')
+  ground(g,x,z,28,18,materialPBR('pavement'),.14)
+  const stationWall=block(g,x,3.3,z,22,6.6,12,materialPBR('stucco'));stationWall.userData.cameraBlocker=true
+  block(g,x,7.4,z,25,1.45,14,materialPBR('roofTile'))
   block(g,x,6.78,z+7,25,.4,.45,place.accent)
   for(let i=-2;i<=2;i++)block(g,x+i*4.15,3.2,z+6.1,3,4.2,.14,'#a1c8c9')
   textBoard(g,place)
-  ground(g,x+16,z,11,130,'#beb5a6',.12)
-  ground(g,x+25,z,10,140,'#585d59',.13)
+  ground(g,x+16,z,11,130,materialPBR('pavement'),.12)
+  ground(g,x+25,z,10,140,materialPBR('asphalt'),.13)
   for(let dx of [21.8,27.9])block(g,x+dx-0,.35,z,.3,.28,136,'#c3ad98')
   for(let zz=-65;zz<=65;zz+=4.5)block(g,x+25,.23,z+zz,8,.23,.6,'#7e6c59')
   // Open-sided tram geometry, not a sealed solid block the avatar ghosts through.
@@ -207,7 +212,7 @@ function avatarModel(){
   return {g,legA,legB,armA,armB}
 }
 function freeMeshes(group){
-  group.traverse(c=>{if(!c.isMesh&&!c.isPoints)return;c.geometry?.dispose();(Array.isArray(c.material)?c.material:[c.material]).forEach(m=>{m?.map?.dispose();m?.dispose()})})
+  group.traverse(c=>{if(!c.isMesh&&!c.isPoints)return;c.geometry?.dispose();(Array.isArray(c.material)?c.material:[c.material]).forEach(m=>{if(!m?.userData?.persistentPBR){m?.map?.dispose();m?.dispose()}})})
   group.clear()
 }
 
@@ -218,19 +223,25 @@ export function createWorld(container,{onNearby,onBoard,onPosition,onError,onNea
   const mobile=typeof window!=='undefined'&&window.matchMedia?.('(max-width: 760px)')?.matches
   const nativeDpr=typeof window!=='undefined'?window.devicePixelRatio||1:1
   let lowPower=!!mobile
-  renderer.setPixelRatio(Math.min(nativeDpr,mobile?1.15:1.65))
+  renderer.setPixelRatio(Math.min(nativeDpr,mobile?1.35:2))
   renderer.setSize(Math.max(1,container.clientWidth),Math.max(1,container.clientHeight))
   renderer.outputColorSpace=THREE.SRGBColorSpace
   renderer.toneMapping=THREE.ACESFilmicToneMapping
-  renderer.toneMappingExposure=1.35
+  renderer.toneMappingExposure=1.12
   renderer.shadowMap.enabled=!lowPower
   renderer.shadowMap.type=THREE.PCFSoftShadowMap
   container.appendChild(renderer.domElement)
   const scene=new THREE.Scene()
   const camera=new THREE.PerspectiveCamera(54,1,.1,560)
+  const composer=new EffectComposer(renderer)
+  composer.addPass(new RenderPass(scene,camera))
+  composer.addPass(new UnrealBloomPass(new THREE.Vector2(Math.max(1,container.clientWidth),Math.max(1,container.clientHeight)),.34,.5,.88))
+  composer.addPass(new OutputPass())
+  let cinematicGraphics=!lowPower
   const hemi=new THREE.HemisphereLight('#fff3df','#899997',2.2);scene.add(hemi)
   const sun=new THREE.DirectionalLight('#fff0df',3)
-  sun.position.set(-35,70,45);sun.castShadow=!lowPower;sun.shadow.mapSize.set(mobile?1024:2048,mobile?1024:2048)
+  sun.position.set(-35,70,45);sun.castShadow=!lowPower;sun.shadow.mapSize.set(mobile?1024:4096,mobile?1024:4096)
+  sun.shadow.bias=-.0002;sun.shadow.normalBias=.017;sun.shadow.radius=3.25
   Object.assign(sun.shadow.camera,{left:-100,right:100,top:100,bottom:-100})
   scene.add(sun)
   const map=new THREE.Group();scene.add(map)
@@ -357,7 +368,7 @@ export function createWorld(container,{onNearby,onBoard,onPosition,onError,onNea
   }
   function resize(){
     const w=Math.max(1,container.clientWidth),h=Math.max(1,container.clientHeight)
-    camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h,false)
+    camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h,false);composer.setSize(w,h)
   }
   const ro=typeof ResizeObserver!=='undefined'?new ResizeObserver(resize):null;ro?.observe(container)
   window.addEventListener('keydown',down);window.addEventListener('keyup',up);window.addEventListener('blur',blur);window.addEventListener('resize',resize)
@@ -376,7 +387,7 @@ export function createWorld(container,{onNearby,onBoard,onPosition,onError,onNea
     try{
       if(rail.update(dt,now,camera,person,{reducedMotion})){
         living?.update(dt,now,weather,player)
-        renderer.render(scene,camera)
+        (cinematicGraphics?composer.render():renderer.render(scene,camera))
         return
       }
       const p=move(player,paused?EMPTY_KEYS:keys,dt)
@@ -413,7 +424,7 @@ export function createWorld(container,{onNearby,onBoard,onPosition,onError,onNea
       if(h!==nearStory){nearStory=h;onNearHotspot?.(h)}
       living?.update(dt,now,weather,player)
       if(++frameCount%8===0)onPosition?.({...player})
-      renderer.render(scene,camera)
+      (cinematicGraphics?composer.render():renderer.render(scene,camera))
     }catch(e){stopped=true;cancelAnimationFrame(raf);onError?.(e?.message||'Rendering stopped unexpectedly.')}
   }
   setRegion('kyoto');resize();raf=requestAnimationFrame(frame)
@@ -421,7 +432,9 @@ export function createWorld(container,{onNearby,onBoard,onPosition,onError,onNea
     setRegion,
     setPerformanceMode(enabled){
       lowPower=!!enabled
-      renderer.setPixelRatio(Math.min(nativeDpr,lowPower?1:mobile?1.15:1.65))
+      renderer.setPixelRatio(Math.min(nativeDpr,lowPower?1:mobile?1.35:2))
+      composer.setPixelRatio(Math.min(nativeDpr,lowPower?1:mobile?1.35:2))
+      cinematicGraphics=!lowPower
       renderer.shadowMap.enabled=!lowPower
       sun.castShadow=!lowPower
       living?.setPerformanceMode(lowPower)
