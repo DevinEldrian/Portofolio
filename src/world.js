@@ -5,6 +5,7 @@ import {HOTSPOT_POSITIONS,nearestHotspot} from './hotspotLogic.js'
 import {HOTSPOTS} from './portfolioContent.js'
 import {CAMERA_DEFAULTS,cameraAfterInput,cameraPose} from './cameraLogic.js'
 import {createKyotoLiving} from './kyotoLiving.js'
+import {extendArashiyama} from './arashiyamaExpanse.js'
 import {createRailCinematic} from './railCinematic.js'
 import {resolveWalk,rect} from './collisionLogic.js'
 import {walkSurfaceY} from './terrainLogic.js'
@@ -258,7 +259,7 @@ export function createWorld(container,{onNearby,onBoard,onPosition,onError,onNea
   if(import.meta.env.DEV)window.__KISEKI_QA__={
     snapshot:()=>({x:player.x,z:player.z,frameCount,paused,keys:[...keys],stopped,region:current,character:avatarAnimation.status()}),
     teleportForCollisionTest(p){
-      if(Number.isFinite(p?.x)&&Number.isFinite(p?.z)&&Math.abs(p.x)<=120&&Math.abs(p.z)<=120)
+      if(Number.isFinite(p?.x)&&Number.isFinite(p?.z)&&Math.abs(p.x)<=250&&Math.abs(p.z)<=250)
         player={x:p.x,z:p.z}
     }
   }
@@ -266,7 +267,11 @@ export function createWorld(container,{onNearby,onBoard,onPosition,onError,onNea
     const place=locationById(id);current=place.id;living=null;freeMeshes(map)
     const bg=new THREE.Color(({arashiyama:'#c2d1d0',akihabara:'#161d37',shibuya:'#576389',kyoto:'#bf9386'})[id]||'#ead2b9')
     scene.background=bg;scene.fog=new THREE.FogExp2(bg,.0038)
-    if(id==='arashiyama')living=createKyotoLiving(map,{reducedMotion});else living=createJapanDistrict(map,id)
+    if(id==='arashiyama'){
+      living=createKyotoLiving(map,{reducedMotion})
+      const expanse=extendArashiyama(map)
+      living.colliders.push(...expanse.colliders)
+    }else living=createJapanDistrict(map,id)
     addStation(map,place);if(id==='arashiyama')addStoryKiosks(map)
     living?.setWeather(weather)
     living?.setPerformanceMode(lowPower)
