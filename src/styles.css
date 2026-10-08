@@ -9,3 +9,22 @@
 .story-sheet p{line-height:1.7}.story-subtitle{font-weight:700}.story-sheet li{line-height:1.6;margin:8px 0}.story-note{font-size:12px;opacity:.75;border-top:1px solid #cabfae;padding-top:12px}
 .story-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:22px}.story-actions button{padding:12px 16px;background:#2d4a4c;color:#fff;cursor:pointer;border:0;border-radius:4px;min-height:44px}.story-actions button+button{background:#e2d7c6;color:#213a3c}
 @media(max-width:600px){.story-shade{padding:8px;align-items:flex-start}.story-sheet{max-height:96dvh}.story-actions button{width:100%}}
+
+/* Living Arashiyama — intentionally readable over WebGL in both weather modes. */
+.weather-mode{position:absolute;z-index:13;left:5%;top:88px;display:flex;gap:6px;align-items:center;padding:8px;background:#122d31df;border:1px solid #e4c5a55b;box-shadow:0 6px 28px #06161988}
+.weather-mode span{font-size:9px;letter-spacing:.1em;color:#f2dbc4;margin-right:10px}
+.weather-mode button{min-height:35px;padding:6px 10px;background:#30494d;color:#f6eee1;border:1px solid #9c998d;cursor:pointer;font-size:10px;font-weight:700;letter-spacing:.07em}
+.weather-mode button[aria-pressed="true"]{background:#f0d1a4;color:#1d3436;border-color:#f0d1a4}
+.weather-mode button:focus-visible,.skip-journey:focus-visible{outline:3px solid #fff;outline-offset:3px}
+.transit{z-index:15;display:flex;align-items:flex-end;justify-content:center;background:transparent;padding:20px 14px 115px;pointer-events:none}
+.transit:before{background:linear-gradient(180deg,transparent 0%,#10262e22 42%,#112a34b5 75%,#071a21d9 100%);animation:none}
+.train-text{z-index:1;width:min(560px,100%);background:#10262ed9;border:1px solid #e9bf9177;border-radius:10px;padding:19px 26px 24px;box-shadow:0 15px 50px #041015a3;gap:8px}
+.train-text>span{font-size:9px;letter-spacing:.14em}.train-text svg{width:25px;height:25px}
+.train-text h2{font:700 clamp(30px,5vw,53px) 'Outfit',sans-serif;letter-spacing:-.05em}
+.train-text p{font:16px/1.35 'Zen Old Mincho',Georgia,serif}.train-text small{color:#e9e0d3b8;font-size:10px;line-height:1.4}
+.rail-phase-list{display:flex;flex-wrap:wrap;justify-content:center;gap:5px;margin:8px 0}
+.rail-phase-list span{padding:5px;font-size:9px;color:#d5c4b49e;border-bottom:2px solid #596e74;letter-spacing:.07em}
+.rail-phase-list span[data-active="true"]{color:#fff;border-color:#f0ab82}
+.skip-journey{pointer-events:auto;cursor:pointer;padding:12px 22px;min-height:44px;color:#173035;background:#f3c69c;border:1px solid #ffd9ac;letter-spacing:.08em;font-size:11px;font-weight:800}
+@media(max-width:700px){.weather-mode{top:82px;left:4%;right:4%;flex-wrap:wrap}.weather-mode span{width:100%;font-size:8px}.transit{padding-bottom:135px}.train-text{padding:12px 16px;gap:5px}.train-text>span{font-size:8px}.train-text p{font-size:13px}.rail-phase-list span{font-size:8px}.train-text h2{font-size:28px}}
+@media(prefers-reduced-motion:reduce){.train-text *,.transit:before{animation:none!important;transition:none!important}}
