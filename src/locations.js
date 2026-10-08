@@ -1,28 +1,41 @@
-export const LOCATIONS = [
+/** Actual destination identities. No fake Hakone/Kamakura internal region IDs. */
+export const LOCATIONS=Object.freeze([
   {
-    id:'kyoto',number:'01',city:'KYOTO',jp:'京都',district:'FUSHIMI / HISTORIC DISTRICT',section:'About',
-    title:'Where my story begins.',description:'Every journey starts with curiosity. Mine is driven by quality, thoughtful problem-solving, and building things that feel alive.',
-    panel:'A different way to introduce myself',detail:'I’m Devin Eldrian Wijaya. Explore the landscape to learn how technology, quality assurance, and immersive experiences connect in my work.',
-    points:['Based in Jakarta, Indonesia','Quality-minded by design','Interested in interactive technology'],accent:'#ed8b74'
+    id:'akihabara',number:'01',city:'AKIHABARA',jp:'秋葉原',district:'ELECTRIC TOWN EXIT · CHUO-DORI · ARCADES',section:'Skills',
+    title:'Curiosity connects everything.',
+    description:'An electric district with electronics shops, animated pedestrian streets, arcade storefronts and fictional neon advertising.',
+    panel:'Skills · Engineering with curiosity',
+    detail:'Technology only works when it is understandable, useful and reliable. My experience spans frontend interfaces, test-case design, functional testing, SQL, Python and coordinated software delivery.',
+    points:['Frontend UI improvements for E-Claim','Functional and regression testing','SQL, Python and QA methodology'],
+    accent:'#e889a4'
   },
   {
-    id:'tokyo',number:'02',city:'TOKYO',jp:'東京',district:'SHIBUYA / ELECTRIC DISTRICT',section:'Projects',
-    title:'Ideas in motion.',description:'The city of prototypes and experiments. A space for the things I build and the challenges I love to solve.',
-    panel:'Selected projects & experiments',detail:'This destination is a showcase for verified case studies, technical prototypes, and interactive builds. More projects will be added here.',
-    points:['Web engineering explorations','Interactive 3D experiences','Project details coming soon'],accent:'#b1bafa'
+    id:'shibuya',number:'02',city:'SHIBUYA',jp:'渋谷',district:'STATION · HACHIKO SIDE · SCRAMBLE CROSSING',section:'Projects',
+    title:'Build experiences for people.',
+    description:'A recognizable Shibuya scramble crossing with diagonal stripes, pedestrians, traffic rhythm, giant display façades and fashion streets.',
+    panel:'Projects · Real experiences, reliable delivery',
+    detail:'Explore my project approach through publicly shareable outcomes and methodologies. No bank client systems or confidential employer materials are recreated.',
+    points:['E-Claim UI and interface enhancements','Test planning, defect documentation and regression verification','Immersive 3D portfolio development'],
+    accent:'#8dbbdf'
   },
   {
-    id:'hakone',number:'03',city:'HAKONE',jp:'箱根',district:'GORA / MOUNTAIN RAILWAY',section:'Experience',
-    title:'The journey so far.',description:'Further into the mountains, discover the systems I have tested and the professional experiences that shape my approach.',
-    panel:'Quality assurance · Treasury systems',detail:'My experience includes IT quality assurance for banking Treasury workflows, with system testing involving Murex and SWIFT.',
-    points:['Functional & regression testing','Integration testing and UAT','End-to-end transaction validation'],accent:'#add5b5'
+    id:'arashiyama',number:'03',city:'ARASHIYAMA',jp:'嵐山',district:'RANDEN · NAGATSUJI-DORI · TOGETSUKYO · SAGANO',section:'Journey',
+    title:'A career is a journey.',
+    description:'Begin at Randen Arashiyama, explore active shop streets, walk beside the Katsura River and reach the Sagano Bamboo Grove.',
+    panel:'My journey · People, systems and purpose',
+    detail:'My professional work connects frontend craft to quality assurance. Discover verified CV narratives through in-world information points along the Arashiyama route.',
+    points:['E-Claim · Frontend and testing','Treasury QA · Functional and integration validation','Reflection · Curiosity, quality and continuous learning'],
+    accent:'#c9b487'
   },
   {
-    id:'kamakura',number:'04',city:'KAMAKURA',jp:'鎌倉',district:'SHICHIRIGAHAMA / COASTAL LINE',section:'Contact',
-    title:'Let’s cross paths.',description:'Some journeys are best made together. If an idea or opportunity brings you here, I’d love to connect.',
-    panel:'Start a conversation',detail:'Interested in quality engineering, immersive technology, or collaborating on the next experience? Find me on GitHub.',
-    points:['Open to meaningful connections','Based in Indonesia','Explore my GitHub profile'],accent:'#ecc593'
+    id:'kyoto',number:'04',city:'KYOTO',jp:'京都',district:'GION · MACHIYA STREETS · YASAKA PAGODA',section:'Experience',
+    title:'Build with care. Move with purpose.',
+    description:'Traditional Kyoto: wooden machiya houses, glowing lanterns, stone lanes, pitched ceramic-tile roofs and cultural craft.',
+    panel:'Experience · Care and accountability',
+    detail:'My experience includes quality assurance for Treasury business processes, functional testing, regression and user acceptance testing. Only public high-level descriptions are included.',
+    points:['Treasury QA and cross-system validation','Test design and evidence-based defect reporting','Continuous improvement and communication'],
+    accent:'#e3a784'
   }
-]
-export const locationById = id => LOCATIONS.find(x=>x.id===id) || LOCATIONS[0]
-export const nextLocation = id => LOCATIONS[(LOCATIONS.findIndex(x=>x.id===id)+1)%LOCATIONS.length]
+])
+export const locationById=id=>LOCATIONS.find(p=>p.id===id)||LOCATIONS[0]
+export const nextLocation=id=>LOCATIONS[(LOCATIONS.findIndex(p=>p.id===id)+1)%LOCATIONS.length]

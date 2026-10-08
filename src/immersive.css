@@ -1,0 +1,49 @@
+/* Playable city, not an opaque landing-poster over a toy diorama. */
+.experience .vignette{
+ background:
+ linear-gradient(90deg,rgba(7,16,25,.67),transparent 40%,transparent 70%,rgba(7,15,24,.58)),
+ linear-gradient(0deg,rgba(5,11,17,.78),transparent 20%,transparent 78%,rgba(4,10,16,.35));
+}
+.experience .hero{left:3%;top:18%;width:min(360px,34%);filter:drop-shadow(0 4px 10px #09192355)}
+.experience .hero h1{font-size:clamp(42px,4.5vw,76px);letter-spacing:-.06em;line-height:1.05}
+.experience .hero .japanese{font-size:22px}
+.experience .hero .hero-description{font-size:11px;max-width:285px;line-height:1.5}
+.experience .hero .top-label{font-size:8px;letter-spacing:.12em}
+.experience .hero .location-index{margin-top:12px}
+.experience .hero .hero-line{margin:10px 0}
+.experience .hero .district{margin-bottom:7px;letter-spacing:.1em}
+.experience .hero h2{font-size:clamp(16px,2vw,24px);margin:0 0 6px}
+.experience .navigation{top:21%;right:3%;width:220px;padding:14px;background:rgba(7,20,31,.69);backdrop-filter:blur(12px);border:1px solid #e0cebb55}
+.experience .navigation .nav-label{margin-bottom:6px}
+.experience .navigation .route-row{padding:10px 0}
+.experience .navigation .route-place strong{font-size:11px}
+.experience .navigation .route-place em{font-size:9px}
+.experience .header{padding-top:15px}
+.experience .header .qv-header-actions{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.experience .hud{bottom:24px}
+.experience .detail-panel{background:rgba(9,21,30,.91);backdrop-filter:blur(22px)}
+.experience .weather-mode{left:3%;top:77px}
+.experience .weather-mode button{border-radius:3px}
+@media(max-width:900px){
+ .experience .header .qv-header-actions{max-width:65%;justify-content:flex-end}
+ .experience .hero{top:20%;width:39%}
+ .experience .navigation{right:2%;width:185px}
+}
+@media(max-width:680px){
+ .experience .header{padding:11px 13px}
+ .experience .header .brand small{display:none}
+ .experience .header .qv-open{min-height:35px}
+ .experience .header .guide-toggle{padding:8px;font-size:7px;min-height:35px}
+ .experience .hero{top:16%;left:14px;width:53%}
+ .experience .hero h1{font-size:clamp(28px,8vw,44px)}
+ .experience .hero .japanese{font-size:18px}
+ .experience .hero h2{font-size:14px}
+ .experience .hero .hero-description{display:none}
+ .experience .hero .explore{margin-top:10px}
+ .experience .navigation{width:140px;top:31%;padding:9px;right:8px}
+ .experience .navigation .route-row{grid-template-columns:16px 1fr 9px;gap:6px;padding:8px 0}
+ .experience .navigation .route-place strong{font-size:9px}
+ .experience .weather-mode{left:10px;top:58px;max-width:calc(100% - 20px)}
+ .experience .hud{bottom:11px}
+ .experience .footer-caption{display:none}
+}
