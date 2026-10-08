@@ -6,6 +6,7 @@ import {HOTSPOTS} from './portfolioContent.js'
 import {CAMERA_DEFAULTS,cameraAfterInput,cameraPose} from './cameraLogic.js'
 import {createKyotoLiving} from './kyotoLiving.js'
 import {createRailCinematic} from './railCinematic.js'
+import {resolveWalk,rect} from './collisionLogic.js'
 
 const STATION={x:20,z:-10}
 const EMPTY_KEYS=new Set()
@@ -141,7 +142,7 @@ function decorate(g,id){
     for(let x=-116;x<=116;x+=23)for(let z=-116;z<=116;z+=24){
       if(Math.abs(x)<23||Math.abs(z+27)<18||Math.hypot(x-STATION.x,z-STATION.z)<27)continue
       const h=15+r()*43,c=cs[Math.floor(r()*cs.length)]
-      block(g,x,h/2,z,12+r()*5,h,12+r()*5,c)
+      const tower=block(g,x,h/2,z,12+r()*5,h,12+r()*5,c);tower.userData.cameraBlocker=true
       for(let y=5;y<h-2;y+=5){
         const neon=r()<.5?'#f7d7b1':'#abd1d9'
         block(g,x+7.2,y,z,.19,1.35,8,mat(neon,{emissive:neon,emissiveIntensity:.24}))
@@ -224,6 +225,7 @@ export function createWorld(container,{onNearby,onBoard,onPosition,onError,onNea
   const pointer=new THREE.Vector2()
   const cameraRaycaster=new THREE.Raycaster()
   const cameraObstacles=[]
+  const solidFootprints=[]
   const cameraFrom=new THREE.Vector3(),cameraDesired=new THREE.Vector3(),cameraDirection=new THREE.Vector3()
   let cameraState={...CAMERA_DEFAULTS},drag=null,contextLost=false,disposed=false
   let player={x:0,z:16},current='kyoto',near=false,nearStory=null,stopped=false,raf=0,lastTime=performance.now(),frameCount=0,paused=false
@@ -235,7 +237,22 @@ export function createWorld(container,{onNearby,onBoard,onPosition,onError,onNea
     addStation(map,place);if(id==='kyoto')addStoryKiosks(map)
     living?.setWeather(weather)
     cameraObstacles.length=0
-    map.traverse(node=>{if(node.isMesh&&node.userData.cameraBlocker)cameraObstacles.push(node)})
+    solidFootprints.length=0
+    map.updateMatrixWorld(true)
+    map.traverse(node=>{
+      if(!node.isMesh||!node.userData.cameraBlocker)return
+      cameraObstacles.push(node)
+      const bounds=new THREE.Box3().setFromObject(node)
+      if(bounds.min.y<4.9 && bounds.max.y>.5){
+        const width=bounds.max.x-bounds.min.x
+        const depth=bounds.max.z-bounds.min.z
+        if(width>.1&&depth>.1)
+          solidFootprints.push(rect((bounds.max.x+bounds.min.x)/2,(bounds.max.z+bounds.min.z)/2,width,depth,'solid building'))
+      }
+    })
+    if(living)solidFootprints.push(...living.colliders)
+    if(id==='kyoto')for(const pos of Object.values(HOTSPOT_POSITIONS))
+      solidFootprints.push(rect(pos.x,pos.z,2.6,.5,'CV information sign'))
     cameraState={...CAMERA_DEFAULTS}
     player={x:0,z:16};person.g.position.set(0,.1,16)
     const start=cameraPose({x:player.x,y:3,z:player.z},cameraState)
@@ -330,10 +347,13 @@ export function createWorld(container,{onNearby,onBoard,onPosition,onError,onNea
         return
       }
       const p=move(player,paused?EMPTY_KEYS:keys,dt)
-      player={x:p.x,z:p.z}
-      person.g.position.set(player.x,.13+(p.moving?Math.abs(Math.sin(now*.014))*.12:0),player.z)
+      const footprints=living?solidFootprints.concat(living.getDynamicColliders()):solidFootprints
+      const next=resolveWalk(player,p,footprints)
+      const walked=p.moving&&Math.hypot(next.x-player.x,next.z-player.z)>.002
+      player={x:next.x,z:next.z}
+      person.g.position.set(player.x,.13+(walked?Math.abs(Math.sin(now*.014))*.12:0),player.z)
       if(p.heading!==null){const a=Math.atan2(Math.sin(p.heading-person.g.rotation.y),Math.cos(p.heading-person.g.rotation.y));person.g.rotation.y+=a*.16}
-      const swing=p.moving?Math.sin(now*.012)*.44:0
+      const swing=walked?Math.sin(now*.012)*.44:0
       person.legA.rotation.x=swing;person.legB.rotation.x=-swing
       person.armA.rotation.x=-swing*.75;person.armB.rotation.x=swing*.75
       circle.position.set(player.x,.08,player.z)
