@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import {mkdir} from 'node:fs/promises'
 import {chromium} from 'playwright'
 await mkdir('atlas-artifacts',{recursive:true})
+let mobileBrowser
 const browser=await chromium.launch({headless:true,args:[
   '--no-sandbox','--disable-dev-shm-usage','--use-gl=angle','--use-angle=swiftshader','--enable-webgl','--enable-unsafe-swiftshader'
 ]})
@@ -25,7 +26,12 @@ try{
   await page.screenshot({path:'atlas-artifacts/entered-akihabara-3d.png'})
   console.log('PASS: Tokyo destination enters actual interactive Akihabara world')
 
-  const small=await browser.newPage({viewport:{width:390,height:844},reducedMotion:'reduce'})
+  // Isolate heavy desktop GPU buffers before opening the mobile viewport.
+  await page.close()
+  mobileBrowser=await chromium.launch({headless:true,args:[
+    '--no-sandbox','--disable-dev-shm-usage','--use-gl=angle','--use-angle=swiftshader','--enable-webgl','--enable-unsafe-swiftshader'
+  ]})
+  const small=await mobileBrowser.newPage({viewport:{width:390,height:844},reducedMotion:'reduce'})
   await small.goto('http://127.0.0.1:4175/',{waitUntil:'domcontentloaded'})
   await small.locator('.kiseki-atlas').waitFor({state:'visible'})
   await small.locator('.atlas-destination').first().waitFor({state:'visible'})
@@ -38,5 +44,6 @@ try{
   console.error('ATLAS WEBGL SMOKE FAIL',e.stack||String(e))
   process.exitCode=1
 }finally{
+  await mobileBrowser?.close()
   await browser.close()
 }
