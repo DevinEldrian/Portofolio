@@ -88,7 +88,7 @@ function shop(g,x,z,label,type,index){
   noren.castShadow=false
 }
 function human(outfit='#425a66',pants='#36414a',skin='#deb998',scale=1){
-  const group=new THREE.Group();group.scale.setScalar(scale)
+  const group=new THREE.Group();group.scale.setScalar(scale*.35)
   // Articulated human proportions and distinct clothing. No cylinder NPC placeholders.
   box(group,0,3,0,1.2,2,.65,materialPBR('fabric',{color:outfit}))
   sphere(group,0,4.65,0,.53,skin)
