@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import {rect,circle} from './collisionLogic.js'
+import {materialPBR} from './pbrMaterials.js'
 
 /**
  * Connected stylized Arashiyama corridor, all positions in game units.
@@ -47,7 +48,7 @@ function maple(g,x,z,seed){
   }
 }
 function bamboo(g,x,z,height){
-  const culm=material('#599071',{metalness:.08})
+  const culm=materialPBR('bamboo')
   const stalk=new THREE.Mesh(new THREE.CylinderGeometry(.16,.23,height,7),culm)
   stalk.position.set(x,height*.5,z);g.add(stalk)
   for(let h=1;h<height;h+=2.1){
@@ -64,15 +65,15 @@ function shop(g,x,z,label,type,index){
   const side=Math.sign(x)
   const facadeX=x-side*4.2
   const c=['#ba9a79','#b7a28c','#cfbba0','#a89475'][index%4]
-  const wall=box(g,x,3.8,z,12,7.6,11,c);wall.userData.cameraBlocker=true
+  const wall=box(g,x,3.8,z,12,7.6,11,materialPBR('stucco',{color:c}));wall.userData.cameraBlocker=true
   // Extended dark sloped-eave silhouette, wooden slatted frontage.
-  box(g,x,8.05,z,14.4,.8,13.2,'#444741')
-  box(g,facadeX,3.4,z,1,6.6,10,'#473e37')
+  box(g,x,8.05,z,14.4,.8,13.2,materialPBR('roofTile'))
+  box(g,facadeX,3.4,z,1,6.6,10,materialPBR('agedWood'))
   box(g,facadeX-side*.6,4.5,z,1.4,2.6,7,material('#d7b17c',{emissive:'#956e37',emissiveIntensity:.16}))
   for(let j=-2;j<=2;j++)box(g,facadeX-side*1.35,4.4,z+j*1.65,.2,4.7,.15,'#694b37')
   const awning=box(g,facadeX-side*2,6,z,3.3,.3,11,type==='tea'?'#516f52':'#9c5245')
   awning.rotation.z=side*.1
-  box(g,facadeX-side*2.1,1.6,z,3.1,1.05,9,'#71503d')
+  box(g,facadeX-side*2.1,1.6,z,3.1,1.05,9,materialPBR('agedWood'))
   const shopSign=signedBoard(g,label,facadeX-side*2.75,7.3,z,7.8,1.7)
   if(shopSign)shopSign.rotation.y=Math.PI/2
   // Goods: trays, fabric rolls, tea tins and wagashi boxes.
@@ -86,7 +87,7 @@ function shop(g,x,z,label,type,index){
 function human(outfit='#425a66',pants='#36414a',skin='#deb998',scale=1){
   const group=new THREE.Group();group.scale.setScalar(scale)
   // Articulated human proportions and distinct clothing. No cylinder NPC placeholders.
-  box(group,0,3,0,1.2,2,.65,outfit)
+  box(group,0,3,0,1.2,2,.65,materialPBR('fabric',{color:outfit}))
   sphere(group,0,4.65,0,.53,skin)
   const hair=sphere(group,0,4.97,-.08,.54,'#302d2b');hair.scale.y=.45
   const leftLeg=new THREE.Group(),rightLeg=new THREE.Group(),leftArm=new THREE.Group(),rightArm=new THREE.Group()
@@ -117,25 +118,25 @@ export function createKyotoLiving(root,{reducedMotion=false}={}){
   const staticColliders=[]
   const g=new THREE.Group();g.name='ARASHIYAMA living town'
   root.add(g)
-  floor(g,0,0,300,300,'#82926e')
+  floor(g,0,0,300,300,materialPBR('stucco',{color:'#8caa82'}))
   // Continuous human-scale public promenade: forest north, marketplace, river south.
-  floor(g,0,-33,12,132,'#bcad90',.08)
-  floor(g,0,28,17,68,'#b9aa90',.09)
-  floor(g,0,50,66,18,'#bcb49d',.09)
-  floor(g,0,98,13,26,'#aea79a',.14)
-  floor(g,0,116,260,48,'#779875')
+  floor(g,0,-33,12,132,materialPBR('cobble'),.08)
+  floor(g,0,28,17,68,materialPBR('cobble'),.09)
+  floor(g,0,50,66,18,materialPBR('pavement'),.09)
+  floor(g,0,98,13,26,materialPBR('cobble'),.14)
+  floor(g,0,116,260,48,materialPBR('stucco',{color:'#87a985'}))
   // Katsura river flows east-west. Wide banks + flowing water plane.
   floor(g,0,74,300,36,'#73919a',.11)
-  const water=floor(g,0,74,300,34,material('#5e95a5',{metalness:.16,roughness:.33}),.13)
+  const water=floor(g,0,74,300,34,new THREE.MeshPhysicalMaterial({color:'#53828d',metalness:.34,roughness:.19,clearcoat:1,clearcoatRoughness:.13,side:THREE.DoubleSide}),.13)
   for(let x=-140;x<145;x+=11){
     const ripple=box(g,x,.16,70+(x%7),6,.013,.11,'#a3cbd0')
     ripple.material.transparent=true;ripple.material.opacity=.55
   }
   // Togetsukyo-inspired bridge: continuous crossing with support piers and parapets.
-  box(g,0,.55,73,12,.45,53,'#a49b8e')
+  box(g,0,.55,73,12,.45,53,materialPBR('agedWood'))
   // Low raised entry pads connect the promenade to the main bridge deck.
-  box(g,0,.29,44.5,11.8,.25,5,'#a49b8e')
-  box(g,0,.29,102,11.8,.25,5,'#a49b8e')
+  box(g,0,.29,44.5,11.8,.25,5,materialPBR('agedWood'))
+  box(g,0,.29,102,11.8,.25,5,materialPBR('agedWood'))
   for(let z=49;z<100;z+=5.2){
     for(const x of [-6.3,6.3]){
       pillar(g,x,1.65,z,.22,2.5,'#baac94')
