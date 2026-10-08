@@ -1,4 +1,4 @@
-export const LIMIT = 120
+export const LIMIT = 260
 export const clamp = (x,min,max) => Number.isFinite(x)?Math.max(min,Math.min(max,x)):min
 export const sanitizePosition = pos => ({x: Number.isFinite(pos?.x)?clamp(pos.x,-LIMIT,LIMIT):0,z: Number.isFinite(pos?.z)?clamp(pos.z,-LIMIT,LIMIT):0})
 export function move(position,keys,dt){
@@ -7,7 +7,7 @@ export function move(position,keys,dt){
   const z=Number(keys.has('s')||keys.has('arrowdown'))-Number(keys.has('w')||keys.has('arrowup'))
   const len=Math.hypot(x,z)
   const delta=clamp(Number.isFinite(dt)?dt:0,0,0.05)
-  const speed=keys.has('shift')?21:13
+  const speed=keys.has('shift')?6.5:3.1
   return {
     x:clamp(safe.x+(len?x/len:0)*speed*delta,-LIMIT,LIMIT),
     z:clamp(safe.z+(len?z/len:0)*speed*delta,-LIMIT,LIMIT),
