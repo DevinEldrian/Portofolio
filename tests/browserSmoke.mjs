@@ -58,6 +58,37 @@ try{
   await page.keyboard.press('Escape')
   assert.equal(await page.getByRole('dialog',{name:/E-Claim/i}).count(),0)
   console.log('PASS: CV story can open and Escape closes panel');passes++
+  // Browser-level integration checks on the exact 3D geometry footprints.
+  // Dev-only placement is not included in the Vite production bundle.
+  const put=async(x,z)=>page.evaluate(p=>window.__KISEKI_QA__.teleportForCollisionTest(p),{x,z})
+  await page.locator('.canvas').focus()
+  await put(12.7,16)
+  await page.keyboard.down('d')
+  await page.waitForTimeout(1800)
+  await page.keyboard.up('d')
+  const shopStop=await read()
+  assert.ok(shopStop.x>=12.7&&shopStop.x<=13.36,
+    'avatar penetrated the east souvenir shop at x='+shopStop.x)
+  await page.screenshot({path:'artifacts/store-collision.png'})
+  console.log('PASS: avatar cannot phase through Kyoto shop counters');passes++
+
+  await put(18,54)
+  await page.keyboard.down('s')
+  await page.waitForTimeout(1800)
+  await page.keyboard.up('s')
+  const riverStop=await read()
+  assert.ok(riverStop.z<=55.26,
+    'avatar walked through Katsura water away from bridge at z='+riverStop.z)
+  await put(0,54)
+  await page.keyboard.down('s')
+  await page.waitForTimeout(1800)
+  await page.keyboard.up('s')
+  const bridgeStep=await read()
+  assert.ok(bridgeStep.z>55.45,
+    'avatar could not use the pedestrian bridge at z='+bridgeStep.z)
+  console.log('PASS: Katsura water blocks feet while bridge remains passable');passes++
+  await put(0,16)
+
 
   // Test Skip promptly from the first boarding phase.
   await page.locator('.next-cta').click()
