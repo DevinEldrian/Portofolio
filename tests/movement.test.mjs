@@ -16,7 +16,7 @@ test('near station interaction',()=>{
 })
 test('all sections have distinct regions and train route loops',()=>{
   assert.equal(new Set(LOCATIONS.map(x=>x.id)).size,4)
-  assert.equal(nextLocation('kamakura').id,'kyoto')
+  assert.equal(nextLocation('kyoto').id,'akihabara')
 })
 
 test('corrupt avatar state does not propagate NaN to camera input',()=>{
