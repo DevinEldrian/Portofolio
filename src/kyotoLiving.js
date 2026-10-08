@@ -72,7 +72,8 @@ function shop(g,x,z,label,type,index){
   const awning=box(g,facadeX-side*2,6,z,3.3,.3,11,type==='tea'?'#516f52':'#9c5245')
   awning.rotation.z=side*.1
   box(g,facadeX-side*2.1,1.6,z,3.1,1.05,9,'#71503d')
-  signedBoard(g,label,facadeX-side*2.75,7.3,z,7.8,1.7)
+  const shopSign=signedBoard(g,label,facadeX-side*2.75,7.3,z,7.8,1.7)
+  if(shopSign)shopSign.rotation.y=Math.PI/2
   // Goods: trays, fabric rolls, tea tins and wagashi boxes.
   for(let j=-2;j<=2;j++){
     const color=type==='tea'?['#63836b','#d9b278','#687b61'][Math.abs(j)%3]:['#d7a267','#cf7252','#d1b38a'][Math.abs(j)%3]
