@@ -13,7 +13,7 @@ function box(g,x,y,z,w,h,d,color){
   m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;g.add(m);return m
 }
 function floor(g,x,z,w,d,color,y=.02){
-  const m=new THREE.Mesh(new THREE.PlaneGeometry(w,d),material(color))
+  const m=new THREE.Mesh(new THREE.PlaneGeometry(w,d),typeof color==='string'?material(color):color)
   m.rotation.x=-Math.PI/2;m.position.set(x,y,z);m.receiveShadow=true;g.add(m);return m
 }
 function pillar(g,x,y,z,r,h,color){
@@ -133,7 +133,7 @@ export function createKyotoLiving(root,{reducedMotion=false}={}){
   }
   for(let z of [60,73,87])for(let x of [-3,3])pillar(g,x,-.15,z,1,3.2,'#807c72')
   // Local market with shop displays, original non-branded signs, shaded counters.
-  const names=['KYOTO TEA','WAGASHI SWEETS','LOCAL CRAFTS','SOUVENIRS','MATCHA & SAKURA','ARASHI TEXTILES']
+  const names=['KYOTO TEA','WAGASHI SWEETS','LOCAL CRAFTS','SOUVENIRS','MATCHA GARDEN','ARASHI TEXTILES']
   for(let j=0;j<6;j++){
     const z=3+j*8.3
     shop(g,-23,z,names[j],j%2?'sweets':'tea',j)
