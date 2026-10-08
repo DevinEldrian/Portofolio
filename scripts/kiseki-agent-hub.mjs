@@ -172,6 +172,10 @@ async function run() {
   }
   if (!command) return note('Ignored: no recognized [Z]/[X1]/[XO]/[T1] header.');
 
+  if (!manual && actor !== bosLogin) {
+    return note('Ignored: message not from the allowlisted GitHub agent account.');
+  }
+
   if (command.kind === 'report' || command.kind === 'pm-update') {
     const role = command.role;
     const status = command.kind === 'report' ? 'AGENT REPORT RECEIVED' : 'PM UPDATE RECORDED';
