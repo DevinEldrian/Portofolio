@@ -1,0 +1,247 @@
+name: KISEKI Autonomous Codex Cycle
+# No production deployment; feature-branch-only development.
+on:
+  push:
+    branches: [feat/z-autonomous-build-runner]
+  workflow_dispatch:
+  schedule:
+    - cron: '17 */4 * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: kiseki-autonomous-p0
+  cancel-in-progress: false
+
+jobs:
+  x1_design:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      enabled: ${{ steps.key.outputs.enabled }}
+      brief: ${{ steps.design.outputs.final-message }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/xo-autonomous-p0
+          persist-credentials: false
+      - name: Check optional OpenAI API key
+        id: key
+        env:
+          CODEX_KEY: ${{ secrets.OPENAI_API_KEY }}
+        shell: bash
+        run: |
+          if [ -n "$CODEX_KEY" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "BLOCKED: repository secret OPENAI_API_KEY has not been configured."
+          fi
+      - name: X1 read-only design brief
+        if: steps.key.outputs.enabled == 'true'
+        id: design
+        uses: openai/codex-action@v1
+        with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          safety-strategy: drop-sudo
+          permission-profile: ":read-only"
+          prompt: |
+            Act as X1 Design Director, reporting to Agent Z.
+            Read docs/JAPAN_RAIL_DESIGN_HANDOFF.md and
+            docs/KISEKI_X1_LIVING_JAPAN_DESIGN_REVISION.md.
+            Pick one remaining P0 Kyoto Arashiyama priority with precise
+            layout, interaction and visual acceptance criteria.
+            Human NPCs, local shops, authentic Randen tram, Katsura River,
+            Togetsukyo Bridge, Sagano bamboo, Kyoto weather and CV kiosks
+            are mandatory. Never claim a screenshot was tested.
+            Return a brief implementation handoff for XO. Do not edit files.
+
+  xo_build:
+    needs: x1_design
+    if: needs.x1_design.outputs.enabled == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    outputs:
+      has_patch: ${{ steps.diff.outputs.has_patch }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/xo-autonomous-p0
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install before Codex receives credentials
+        run: npm install --ignore-scripts --no-audit --no-fund
+      - name: XO Codex makes one incremental playable improvement
+        id: xo
+        uses: openai/codex-action@v1
+        with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          permission-profile: ":workspace"
+          safety-strategy: drop-sudo
+          prompt: |
+            Act as XO Development Lead under PM Agent Z.
+            Work ONLY in src/, tests/ and docs/. Do not change
+            .github/, scripts/, package manifests, git config,
+            branches, deployments or secrets.
+            Read X1 art brief below and the current repository code:
+            ${{ needs.x1_design.outputs.brief }}
+
+            Implement exactly ONE useful, testable milestone for a
+            recognizable and living Kyoto Arashiyama vertical slice.
+            PRIORITY: W-key/camera/WebGL safety; Randen station and
+            connected shop street to Katsura River, Togetsukyo, bamboo;
+            human visitors/NPC behaviors; clickable CV story markers;
+            autumn golden-hour weather; real character train boarding,
+            cabin window, arrival and exit plus safe Skip.
+            Avoid redundant edits by inspecting current source.
+            Add or update focused tests; attempt npm test and npm run build.
+            Never fabricate test evidence, CV claims or copyrighted anime art.
+            Never commit/push/merge or touch production.
+      - name: Collect restricted source-code diff
+        id: diff
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/kiseki-diff"
+          git add -N -- src/ tests/ docs/
+          git diff --binary --no-ext-diff -- src/ tests/ docs/ > "$RUNNER_TEMP/kiseki-diff/changes.patch"
+          count="$(wc -c < "$RUNNER_TEMP/kiseki-diff/changes.patch")"
+          if [ "$count" -eq 0 ]; then
+            echo "has_patch=false" >> "$GITHUB_OUTPUT"
+            echo "No code change made by XO."
+          elif [ "$count" -gt 200000 ]; then
+            echo "Refusing source diff over 200KB per cycle."
+            exit 1
+          else
+            echo "has_patch=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Send source diff to separate verification runner
+        if: steps.diff.outputs.has_patch == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: kiseki-candidate-patch
+          path: ${{ runner.temp }}/kiseki-diff/changes.patch
+          retention-days: 3
+
+  t1_verify:
+    needs: xo_build
+    if: needs.xo_build.outputs.has_patch == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    outputs:
+      commit: ${{ steps.publish.outputs.commit }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/xo-autonomous-p0
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: kiseki-candidate-patch
+          path: ${{ runner.temp }}/kiseki-candidate
+      - name: Verify source allowlist and apply patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git apply --check "$RUNNER_TEMP/kiseki-candidate/changes.patch"
+          git apply "$RUNNER_TEMP/kiseki-candidate/changes.patch"
+          while IFS= read -r path; do
+            case "$path" in
+              src/*|tests/*|docs/*) ;;
+              *) echo "Forbidden file changed: $path"; exit 1 ;;
+            esac
+          done < <(git status --short | cut -c4-)
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Independent deterministic unit/build test
+        run: |
+          npm install --ignore-scripts --no-audit --no-fund
+          npm test
+          npm run build
+      - name: Commit to isolated feature branch, never main
+        id: publish
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TARGET_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          git config user.name 'kiseki-codex[bot]'
+          git config user.email 'kiseki-codex@users.noreply.github.com'
+          git add -- src/ tests/ docs/
+          git diff --cached --quiet && exit 0
+          git commit -m 'feat(autonomous): verified incremental Kyoto P0 change'
+          authorization="$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)"
+          git -c "http.extraheader=AUTHORIZATION: basic $authorization" push \
+            "https://github.com/$TARGET_REPO.git" HEAD:refs/heads/feat/xo-autonomous-p0
+          echo "commit=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+  t1_review:
+    needs: t1_verify
+    if: needs.t1_verify.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    outputs:
+      audit: ${{ steps.review.outputs.final-message }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/xo-autonomous-p0
+          persist-credentials: false
+      - name: T1 independent read-only code review
+        id: review
+        uses: openai/codex-action@v1
+        with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          permission-profile: ":read-only"
+          safety-strategy: drop-sudo
+          prompt: |
+            Act as T1 independent QA under Agent Z. Read current P0
+            source and test against spec. Review logic for blank screen
+            on W, camera collision, NPCs, kiosks E/click/Escape,
+            train interior/exit, weather, WebGL recovery, accessibility,
+            license issues and high-level CV truth.
+            State PASS/FAIL/BLOCKED per area and concrete code evidence.
+            Browser, WebGL, visual quality and mobile are NOT verified by
+            a unit-test build. Do not claim QA complete or edit source.
+
+  z_report:
+    needs: [x1_design, xo_build, t1_verify, t1_review]
+    if: always() && needs.x1_design.outputs.enabled == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Report results to Mission Control Issue 1
+        uses: actions/github-script@v7
+        env:
+          XO_RESULT: ${{ needs.xo_build.result }}
+          TEST_RESULT: ${{ needs.t1_verify.result }}
+          REVIEW_RESULT: ${{ needs.t1_review.result }}
+          CODE_SHA: ${{ needs.t1_verify.outputs.commit }}
+          T1_AUDIT: ${{ needs.t1_review.outputs.audit }}
+          CYCLE_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        with:
+          script: |
+            const body = [
+              '[AUTO:Z] REAL CODING CYCLE',
+              'GitHub Actions evidence: ' + process.env.CYCLE_URL,
+              'XO implementation: ' + process.env.XO_RESULT,
+              'T1 unit/build verification: ' + process.env.TEST_RESULT,
+              'T1 code review: ' + process.env.REVIEW_RESULT,
+              'New feature-branch commit: ' + (process.env.CODE_SHA || 'none'),
+              'T1 static review: ' + (process.env.T1_AUDIT || 'not available').slice(0,3000),
+              'Work branch: feat/xo-autonomous-p0.',
+              'Visual and browser QA still require real evidence.',
+              'No main merge or production deployment. Bos approves releases.'
+            ].join('\n\n');
+            await github.rest.issues.createComment({
+              owner: context.repo.owner, repo: context.repo.repo,
+              issue_number: 1, body
+            });
