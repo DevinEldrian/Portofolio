@@ -1,0 +1,103 @@
+import React,{useEffect,useRef,useState} from 'react'
+import {createWorld} from './world.js'
+import {LOCATIONS,locationById,nextLocation} from './locations.js'
+
+function TrainIcon(){return <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><rect x="5" y="2" width="14" height="18" rx="4"/><path d="M5 11h14M9 7h6M8 22l2-2m4 0 2 2M8 16h.2M15.8 16h.2"/></svg>}
+function Arrow(){return <span aria-hidden="true">↗</span>}
+
+export default function App(){
+  const holder=useRef(null),world=useRef(null),travelFn=useRef(null),busy=useRef(false),timer=useRef(0)
+  const [here,setHere]=useState('kyoto')
+  const [near,setNear]=useState(false)
+  const [pos,setPos]=useState({x:0,z:16})
+  const [error,setError]=useState('')
+  const [traveling,setTraveling]=useState(false)
+  const [going,setGoing]=useState('tokyo')
+  const [open,setOpen]=useState(true)
+  const [guide,setGuide]=useState(false)
+  const active=locationById(here),next=nextLocation(here)
+  function travel(id){
+    if(busy.current||world.current?.current()===id)return
+    busy.current=true;setGoing(id);setTraveling(true)
+    timer.current=window.setTimeout(()=>{
+      try{world.current?.setRegion(id);setHere(id);setOpen(true)}
+      catch(err){setError(err?.message||'This world could not load.')}
+      busy.current=false;setTraveling(false)
+    },1100)
+  }
+  travelFn.current=travel
+  useEffect(()=>{
+    try{world.current=createWorld(holder.current,{
+      onNearby:setNear,onPosition:setPos,onError:setError,
+      onBoard:id=>travelFn.current(nextLocation(id).id)
+    })}catch(err){setError(err?.message||'3D could not start.')}
+    return()=>{window.clearTimeout(timer.current);world.current?.dispose();world.current=null}
+  },[])
+  function inputButton(key,character,title){
+    const release=()=>world.current?.setInput(key,false)
+    return <button className="touch-key" key={key} aria-label={title}
+      onPointerDown={e=>{e.preventDefault();e.currentTarget.setPointerCapture?.(e.pointerId);world.current?.setInput(key,true)}}
+      onPointerUp={release} onPointerCancel={release} onLostPointerCapture={release}>{character}</button>
+  }
+  return <div className="experience" style={{'--accent':active.accent}}>
+    <div className="canvas" ref={holder} role="img" aria-label={'Interactive 3D Japanese destination: '+active.city}/>
+    <div className="vignette" aria-hidden="true"/>
+    <header className="header">
+      <a className="brand" href="https://github.com/DevinEldrian" target="_blank" rel="noopener noreferrer" aria-label="Devin GitHub profile">
+        <span className="brand-symbol" lang="ja">旅</span><span><strong>DEVIN<span className="brand-period">.</span></strong><small>AN INTERACTIVE JOURNEY</small></span>
+      </a>
+      <div className="header-mode"><i/> WORLD EXPLORER <span>/</span> JAPAN 2026</div>
+      <button className="guide-toggle" onClick={()=>setGuide(x=>!x)}>{guide?'CLOSE GUIDE':'HOW TO PLAY'} <Arrow/></button>
+    </header>
+    <main className="main">
+      <section className="hero" aria-live="polite">
+        <div className="top-label"><span/> THE WORLD OF DEVIN ELDRIAN WIJAYA</div>
+        <div className="location-index"><em>{active.number}</em><b/> JAPAN</div>
+        <h1>{active.city}<span>.</span></h1>
+        <div className="japanese" lang="ja">{active.jp}</div>
+        <div className="hero-line"/>
+        <div className="district"><span/> {active.district}</div>
+        <h2>{active.title}</h2>
+        <p className="hero-description">{active.description}</p>
+        <button className="explore" onClick={()=>setOpen(x=>!x)}>{open?'HIDE DETAILS':'EXPLORE '+active.section.toUpperCase()} <span>→</span></button>
+      </section>
+      <nav className="navigation" aria-label="Journey destinations">
+        <div className="nav-label">DESTINATIONS <span>— 04 STOPS</span></div>
+        <div className="route">{LOCATIONS.map(loc=><button key={loc.id} disabled={traveling} aria-current={loc.id===here?'location':undefined}
+          onClick={()=>travel(loc.id)} className={'route-row '+(loc.id===here?'selected':'')}>
+          <span className="stop-circle"><span/></span><small>{loc.number}</small>
+          <span className="route-place"><strong>{loc.city}</strong><em>{loc.section}</em></span>
+          <b>↗</b>
+        </button>)}</div>
+        <div className="route-foot"><TrainIcon/> JAPAN RAIL JOURNEY <span/></div>
+      </nav>
+    </main>
+    <div className="vertical-japanese" lang="ja">旅はまだ続く</div>
+    {open&&<aside className="detail-panel" aria-label={active.section+' details'}>
+      <div className="panel-heading">{active.section.toUpperCase()} <span>✳</span><button onClick={()=>setOpen(false)} aria-label="Close details">×</button></div>
+      <h3>{active.panel}</h3><p>{active.detail}</p>
+      <ul>{active.points.map((point,i)=><li key={point}><span>0{i+1}</span>{point}</li>)}</ul>
+      {here==='kamakura'&&<a className="github-cta" href="https://github.com/DevinEldrian" target="_blank" rel="noopener noreferrer">CONNECT ON GITHUB ↗</a>}
+      <span className="panel-kanji" lang="ja">{active.jp}</span>
+    </aside>}
+    {guide&&<aside className="guide" aria-label="Controls"><h3>EXPLORER'S GUIDE</h3>
+      <p><kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd><span>Move avatar</span></p>
+      <p><kbd>SHIFT</kbd><span>Run faster</span></p>
+      <p><kbd>E</kbd><span>Board near a station</span></p>
+      <p><span>Click city on right →</span><span>Travel by train</span></p>
+      <small>Locations are stylized artistic interpretations of Japan.</small>
+    </aside>}
+    <footer className="hud">
+      <div className="map-info"><div className="minimap"><div className="roads"/><i className="station-point"/><i className="you-point" style={{left:Math.max(6,Math.min(90,50+pos.x*.47))+'%',top:Math.max(8,Math.min(90,50+pos.z*.47))+'%'}}/><span>N ↑</span></div><div className="map-legend"><small>YOU ARE EXPLORING</small><strong>{active.city} <i>· {active.number}</i></strong><em>自由に歩く · Free roam</em></div></div>
+      <div className="key-hint"><div className="wasd"><span>W</span><div><span>A</span><span>S</span><span>D</span></div></div><p>MOVE<small>SHIFT TO RUN</small></p></div>
+      <div className="touch-controls"><div>{inputButton('w','↑','Move forward')}</div><div>{inputButton('a','←','Move left')}{inputButton('s','↓','Move backward')}{inputButton('d','→','Move right')}</div></div>
+      <div className="cta-group">
+        {near&&<button className="board-cta" onClick={()=>world.current?.board()}><kbd>E</kbd> BOARD TRAIN <TrainIcon/></button>}
+        <button className="next-cta" disabled={traveling} onClick={()=>travel(next.id)}><span><small>NEXT DESTINATION</small><strong>{next.city} <span>→</span></strong></span><i><TrainIcon/></i></button>
+      </div>
+    </footer>
+    <div className="footer-caption">A PORTFOLIO YOU CAN WALK THROUGH <span>✳</span> MADE WITH CURIOSITY</div>
+    {traveling&&<div className="transit" role="status" aria-live="assertive"><div className="train-text"><span>NEXT STATION · 次の駅</span><TrainIcon/><h2>{locationById(going).city}</h2><p>Taking the scenic route...</p><div className="progress"><i/></div></div></div>}
+    {error&&<div className="error-backdrop" role="alert"><div className="error-card"><small>3D ENGINE</small><h2>We lost the scenery.</h2><p>{error}</p><p>Try reloading, updating the browser or enabling hardware acceleration.</p><button onClick={()=>location.reload()}>RELOAD EXPERIENCE ↗</button></div></div>}
+  </div>
+}
