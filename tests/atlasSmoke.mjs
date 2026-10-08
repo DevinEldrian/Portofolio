@@ -10,7 +10,7 @@ try{
   const page=await browser.newPage({viewport:{width:1440,height:900},reducedMotion:'reduce'})
   const errors=[]
   page.on('pageerror',e=>errors.push(e.message))
-  await page.goto('http://127.0.0.1:4175/',{waitUntil:'domcontentloaded',timeout:30000})
+  await page.goto('http://127.0.0.1:4175/?atlas=1',{waitUntil:'domcontentloaded',timeout:30000})
   await page.locator('.kiseki-atlas').waitFor({state:'visible',timeout:12000})
   await page.locator('.atlas-webgl canvas').waitFor({state:'visible',timeout:40000})
   assert.equal(await page.locator('.atlas-destination').count(),4)
@@ -32,7 +32,7 @@ try{
     '--no-sandbox','--disable-dev-shm-usage','--use-gl=angle','--use-angle=swiftshader','--enable-webgl','--enable-unsafe-swiftshader'
   ]})
   const small=await mobileBrowser.newPage({viewport:{width:390,height:844},reducedMotion:'reduce'})
-  await small.goto('http://127.0.0.1:4175/',{waitUntil:'domcontentloaded'})
+  await small.goto('http://127.0.0.1:4175/?atlas=1',{waitUntil:'domcontentloaded'})
   await small.locator('.kiseki-atlas').waitFor({state:'visible'})
   await small.locator('.atlas-destination').first().waitFor({state:'visible'})
   await small.screenshot({path:'atlas-artifacts/world-atlas-mobile.png'})
