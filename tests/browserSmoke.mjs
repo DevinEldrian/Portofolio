@@ -65,9 +65,9 @@ try{
   await page.getByText(/Inside the cabin/i).waitFor({state:'visible',timeout:6000})
   await page.screenshot({path:'artifacts/rail-cabin.png'})
   await page.getByRole('button',{name:/SKIP TO ARRIVAL/i}).click()
-  await page.getByText(/Arriving at the next platform/i).waitFor({state:'visible',timeout:2500})
-  await page.getByRole('button',{name:/SKIP TO ARRIVAL/i}).click()
-  await page.locator('.transit').waitFor({state:'hidden',timeout:6000})
+  // Skip jumps to REVEAL; REVEAL/EXITING then advance automatically.
+  // A slow software renderer may complete both stages before a second click.
+  await page.locator('.transit').waitFor({state:'hidden',timeout:12000})
   assert.match(await page.locator('.hero h1').innerText(),/TOKYO/i)
   console.log('PASS: rendered train window phase, skip, arrive and exit');passes++
   assert.deepEqual(errors,[],'JavaScript page exceptions in desktop smoke')
