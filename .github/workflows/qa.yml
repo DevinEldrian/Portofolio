@@ -1,7 +1,7 @@
 name: Portfolio QA
 on:
   push:
-    branches: [main]
+    branches: [main, 'feat/xo-arashiyama-p0', 'feat/xo-autonomous-p0']
   pull_request:
     branches: [main]
 
@@ -21,3 +21,41 @@ jobs:
         run: npm test
       - name: Production build
         run: npm run build
+
+  browser_smoke:
+    if: github.event_name == 'pull_request'
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install app and browser test runner
+        run: |
+          npm install --no-audit --no-fund
+          npm install --no-save --no-package-lock playwright@1.56.0
+      - name: Install actual Chromium runtime
+        run: npx playwright install --with-deps chromium
+      - name: Start local 3D preview
+        run: |
+          npm run dev -- --host 127.0.0.1 --port 4175 > /tmp/kiseki-vite.log 2>&1 &
+          for i in $(seq 1 50); do
+            curl -fsS http://127.0.0.1:4175/ >/dev/null && exit 0
+            sleep 1
+          done
+          cat /tmp/kiseki-vite.log
+          exit 1
+      - name: Real browser interaction smoke
+        run: node tests/browserSmoke.mjs
+      - name: Upload screenshots for Bos and QA review
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: kiseki-kyoto-real-browser-screenshots
+          path: artifacts/
+          if-no-files-found: ignore
+          retention-days: 14
