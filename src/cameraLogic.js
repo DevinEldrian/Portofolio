@@ -3,8 +3,8 @@
  * propagate NaN/Infinity into the Three.js view/projection matrix.
  * Coordinates are game-local, not surveyed geographic coordinates.
  */
-export const CAMERA_DEFAULTS=Object.freeze({yaw:0.55,pitch:0.48,distance:24})
-const MIN_PITCH=0.18,MAX_PITCH=1.12,MIN_DISTANCE=7,MAX_DISTANCE=38
+export const CAMERA_DEFAULTS=Object.freeze({yaw:0.55,pitch:0.37,distance:7.4})
+const MIN_PITCH=0.18,MAX_PITCH=1.12,MIN_DISTANCE=3.5,MAX_DISTANCE=17
 const finite=(value,fallback)=>Number.isFinite(value)?value:fallback
 const clamp=(value,min,max)=>Math.max(min,Math.min(max,value))
 
@@ -38,7 +38,7 @@ export function cameraPose(rawTarget,rawState){
     target,
     position:{
       x:target.x+Math.sin(s.yaw)*horizontal,
-      y:Math.max(2.5,target.y+Math.sin(s.pitch)*s.distance),
+      y:Math.max(1.35,target.y+Math.sin(s.pitch)*s.distance),
       z:target.z+Math.cos(s.yaw)*horizontal
     }
   }
