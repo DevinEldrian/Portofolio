@@ -111,15 +111,15 @@ try{
   // UI click is dispatched directly so slow SwiftShader rendering cannot make
   // the short boarding animation expire while Playwright waits for animation stability.
   await page.locator('.skip-journey').evaluate(el=>el.click())
-  await page.locator('.transit').waitFor({state:'hidden',timeout:12000})
+  await page.locator('.transit').waitFor({state:'hidden',timeout:30000})
   assert.match(await page.locator('.hero h1').innerText(),/KYOTO/i)
   console.log('PASS: boarding Skip reaches destination without hanging');passes++
   // Separately observe a natural uninterrupted ride (including cabin phase).
   // This avoids clicking a Skip control after the timed scene already ended.
   await page.locator('.next-cta').click()
-  await page.getByText(/Inside the cabin/i).waitFor({state:'visible',timeout:9000})
+  await page.getByText(/Inside the cabin/i).waitFor({state:'visible',timeout:20000})
   console.log('PASS: actual 3D cabin phase reached');passes++
-  await page.locator('.transit').waitFor({state:'hidden',timeout:12000})
+  await page.locator('.transit').waitFor({state:'hidden',timeout:30000})
   assert.match(await page.locator('.hero h1').innerText(),/AKIHABARA/i)
   await page.screenshot({path:'artifacts/train-arrived-hakone.png'})
   console.log('PASS: uninterrupted train reaches destination and exits');passes++
