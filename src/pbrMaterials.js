@@ -133,6 +133,7 @@ export function materialPBR(kind,props={}){
     clearcoatRoughness:kind==='asphalt'?.24:.56,
     ...props
   })
+  m.userData.persistentPBR=true
   colored.set(id,m)
   return m
 }
