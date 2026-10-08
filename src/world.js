@@ -1,6 +1,8 @@
 import * as THREE from 'three'
 import {locationById} from './locations.js'
 import {move,nearStation} from './gameLogic.js'
+import {HOTSPOT_POSITIONS,nearestHotspot} from './hotspotLogic.js'
+import {HOTSPOTS} from './portfolioContent.js'
 
 const STATION={x:20,z:-10}
 const EMPTY_KEYS=new Set()
@@ -70,6 +72,33 @@ function textBoard(g,place){
   const tex=new THREE.CanvasTexture(c);tex.colorSpace=THREE.SRGBColorSpace
   const mesh=new THREE.Mesh(new THREE.PlaneGeometry(8.4,3.1),new THREE.MeshBasicMaterial({map:tex,side:THREE.DoubleSide}))
   mesh.position.set(STATION.x,9.4,STATION.z+6.15);g.add(mesh)
+}
+function addStoryKiosks(g){
+ for(const item of HOTSPOTS){
+  const p=HOTSPOT_POSITIONS[item.id]
+  if(!p)continue
+  const node=new THREE.Group()
+  node.name='CV KIOSK '+item.label
+  node.userData.hotspotId=item.id
+  node.position.set(p.x,0,p.z)
+  block(node,0,1.4,0,2.6,2.8,.5,'#3c5354')
+  block(node,0,3.2,0,3.4,1.05,.65,mat('#f4daa9',{emissive:'#f1c582',emissiveIntensity:.23}))
+  const canvas=document.createElement('canvas');canvas.width=512;canvas.height=256
+  const c=canvas.getContext('2d')
+  if(c){
+   c.fillStyle='#f5ebd6';c.fillRect(0,0,512,256)
+   c.fillStyle='#243c3d';c.textAlign='center'
+   c.font='bold 30px sans-serif';c.fillText('CV JOURNEY',256,56)
+   c.font='bold 29px sans-serif';c.fillText(item.label.split(' · ')[0].slice(0,22),256,124)
+   c.font='22px sans-serif';c.fillText('CLICK / E TO DISCOVER',256,188)
+   const texture=new THREE.CanvasTexture(canvas)
+   texture.colorSpace=THREE.SRGBColorSpace
+   const sign=new THREE.Mesh(new THREE.PlaneGeometry(3.1,1.6),
+     new THREE.MeshBasicMaterial({map:texture,side:THREE.DoubleSide}))
+   sign.position.set(0,2,.27);node.add(sign)
+  }
+  g.add(node)
+ }
 }
 function addStation(g,place){
   const {x,z}=STATION
@@ -168,7 +197,7 @@ function freeMeshes(group){
   group.clear()
 }
 
-export function createWorld(container,{onNearby,onBoard,onPosition,onError}={}){
+export function createWorld(container,{onNearby,onBoard,onPosition,onError,onNearHotspot,onHotspot}={}){
   let renderer
   try{renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'})}
   catch{throw new Error('WebGL could not start. Try updating the browser or enabling graphics acceleration.')}
@@ -192,23 +221,38 @@ export function createWorld(container,{onNearby,onBoard,onPosition,onError}={}){
   const circle=new THREE.Mesh(new THREE.CircleGeometry(1.8,24),new THREE.MeshBasicMaterial({color:'#000000',transparent:true,opacity:.19}))
   circle.rotation.x=-Math.PI/2;scene.add(circle)
   const keys=new Set()
-  let player={x:0,z:16},current='kyoto',near=false,stopped=false,raf=0,lastTime=performance.now(),frameCount=0,paused=false
+  const raycaster=new THREE.Raycaster()
+  const pointer=new THREE.Vector2()
+  let player={x:0,z:16},current='kyoto',near=false,nearStory=null,stopped=false,raf=0,lastTime=performance.now(),frameCount=0,paused=false
   function setRegion(id){
     const place=locationById(id);current=place.id;freeMeshes(map)
     const bg=new THREE.Color(({kyoto:'#ead2b9',tokyo:'#b9b9c1',hakone:'#c3d2c6',kamakura:'#cadfe0'})[id]||'#ead2b9')
     scene.background=bg;scene.fog=new THREE.FogExp2(bg,.0048)
-    decorate(map,id);addStation(map,place)
+    decorate(map,id);addStation(map,place);if(id==='kyoto')addStoryKiosks(map)
     player={x:0,z:16};person.g.position.set(0,.1,16)
     camera.position.set(27,27,59);camera.lookAt(0,3,16)
-    near=false;onNearby?.(false);onPosition?.(player)
+    near=false;nearStory=null;onNearby?.(false);onNearHotspot?.(null);onPosition?.(player)
   }
   function down(e){
     if(paused)return
     if(e.target instanceof HTMLElement && ['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName))return
     const k=e.key.toLowerCase()
     if(['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright','shift','e'].includes(k))e.preventDefault()
-    if(k==='e'&&!e.repeat&&near)onBoard?.(current)
+    if(k==='e'&&!e.repeat){if(nearStory)onHotspot?.(nearStory);else if(near)onBoard?.(current)}
     keys.add(k)
+  }
+  function pickStory(e){
+    if(paused||current!=='kyoto')return
+    const rect=renderer.domElement.getBoundingClientRect()
+    if(!rect.width||!rect.height)return
+    pointer.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1)
+    raycaster.setFromCamera(pointer,camera)
+    const hits=raycaster.intersectObjects(map.children,true)
+    for(const hit of hits){
+      let node=hit.object
+      while(node&&!node.userData?.hotspotId)node=node.parent
+      if(node?.userData?.hotspotId){onHotspot?.(node.userData.hotspotId);return}
+    }
   }
   function up(e){keys.delete(e.key.toLowerCase())}
   function blur(){keys.clear()}
@@ -220,6 +264,7 @@ export function createWorld(container,{onNearby,onBoard,onPosition,onError}={}){
   const ro=typeof ResizeObserver!=='undefined'?new ResizeObserver(resize):null;ro?.observe(container)
   window.addEventListener('keydown',down);window.addEventListener('keyup',up);window.addEventListener('blur',blur);window.addEventListener('resize',resize)
   renderer.domElement.addEventListener('webglcontextlost',lost)
+  renderer.domElement.addEventListener('pointerup',pickStory)
   function frame(now){
     if(stopped)return
     raf=requestAnimationFrame(frame)
@@ -237,6 +282,8 @@ export function createWorld(container,{onNearby,onBoard,onPosition,onError}={}){
       camera.lookAt(player.x,3,player.z)
       const n=nearStation(player,STATION)
       if(n!==near){near=n;onNearby?.(near)}
+      const h=current==='kyoto'?nearestHotspot(player):null
+      if(h!==nearStory){nearStory=h;onNearHotspot?.(h)}
       if(++frameCount%8===0)onPosition?.({...player})
       renderer.render(scene,camera)
     }catch(e){stopped=true;cancelAnimationFrame(raf);onError?.(e?.message||'Rendering stopped unexpectedly.')}
@@ -252,6 +299,7 @@ export function createWorld(container,{onNearby,onBoard,onPosition,onError}={}){
       stopped=true;cancelAnimationFrame(raf);ro?.disconnect()
       window.removeEventListener('keydown',down);window.removeEventListener('keyup',up);window.removeEventListener('blur',blur);window.removeEventListener('resize',resize)
       renderer.domElement.removeEventListener('webglcontextlost',lost)
+      renderer.domElement.removeEventListener('pointerup',pickStory)
       freeMeshes(map);freeMeshes(person.g)
       circle.geometry.dispose();circle.material.dispose()
       renderer.dispose();renderer.domElement.remove()
