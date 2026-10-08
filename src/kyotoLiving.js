@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import {rect,circle} from './collisionLogic.js'
 import {materialPBR} from './pbrMaterials.js'
+import {addBambooCrownGeometry} from './bambooDetail.js'
 
 /**
  * Connected stylized Arashiyama corridor, all positions in game units.
@@ -47,18 +48,15 @@ function maple(g,x,z,seed){
     sphere(g,x+Math.cos(a)*1.4,h+Math.sin(i*3.1)*.9,z+Math.sin(a)*1.5,2.6,warm[(i+Math.floor(seed*5))%warm.length])
   }
 }
-function bamboo(g,x,z,height){
+function bamboo(g,x,z,height,culms){
+  culms.push({x,z,height})
   const culm=materialPBR('bamboo')
   const stalk=new THREE.Mesh(new THREE.CylinderGeometry(.16,.23,height,7),culm)
   stalk.position.set(x,height*.5,z);g.add(stalk)
   for(let h=1;h<height;h+=2.1){
     const joint=new THREE.Mesh(new THREE.CylinderGeometry(.24,.24,.13,7),material('#416d54'))
     joint.position.set(x,h,z);g.add(joint)
-    if(h>height*.45){
-      const crown=new THREE.Mesh(new THREE.ConeGeometry(.9,3.1,5),material(h%3>1?'#3c7958':'#539873'))
-      crown.rotation.z=((x+z)%3-1)*.26
-      crown.position.set(x+(h%2-.5)*.38,h+.28,z);g.add(crown)
-    }
+    // Each stem receives realistic curved instanced leaves below.
   }
 }
 function shop(g,x,z,label,type,index){
@@ -67,7 +65,12 @@ function shop(g,x,z,label,type,index){
   const c=['#ba9a79','#b7a28c','#cfbba0','#a89475'][index%4]
   const wall=box(g,x,3.8,z,12,7.6,11,materialPBR('stucco',{color:c}));wall.userData.cameraBlocker=true
   // Extended dark sloped-eave silhouette, wooden slatted frontage.
-  box(g,x,8.05,z,14.4,.8,13.2,materialPBR('roofTile'))
+  // Pitched tiled machiya roof planes and projecting deep eaves.
+  for(const slope of [-1,1]){
+    const tile=box(g,x+slope*3.75,8.6,z,7.95,.45,13.8,materialPBR('roofTile'))
+    tile.rotation.z=-slope*.18
+  }
+  box(g,x,8.5,z,15.1,.15,14.2,materialPBR('agedWood'))
   box(g,facadeX,3.4,z,1,6.6,10,materialPBR('agedWood'))
   box(g,facadeX-side*.6,4.5,z,1.4,2.6,7,material('#d7b17c',{emissive:'#956e37',emissiveIntensity:.16}))
   for(let j=-2;j<=2;j++)box(g,facadeX-side*1.35,4.4,z+j*1.65,.2,4.7,.15,'#694b37')
@@ -116,6 +119,7 @@ const PEOPLE=[
 ]
 export function createKyotoLiving(root,{reducedMotion=false}={}){
   const staticColliders=[]
+  const culms=[]
   const g=new THREE.Group();g.name='ARASHIYAMA living town'
   root.add(g)
   floor(g,0,0,300,300,materialPBR('stucco',{color:'#8caa82'}))
@@ -160,12 +164,13 @@ export function createKyotoLiving(root,{reducedMotion=false}={}){
   for(let z=-98;z<-47;z+=7){
     for(let side of [-1,1]){
       const x=side*(8.5+(Math.abs(z)%4))
-      bamboo(g,x,z,13+Math.abs(z%5))
-      bamboo(g,x+side*3.5,z+2.1,15+Math.abs(z%3))
+      bamboo(g,x,z,13+Math.abs(z%5),culms)
+      bamboo(g,x+side*3.5,z+2.1,15+Math.abs(z%3),culms)
       staticColliders.push(circle(x,z,.3,'bamboo'))
       staticColliders.push(circle(x+side*3.5,z+2.1,.3,'bamboo'))
     }
   }
+  addBambooCrownGeometry(g,culms,{leavesPerStem:38})
   // Autumn maples near Randen arrival, shops, riverbank, low-frequency foliage.
   let rand=371
   const random=()=>{rand=(Math.imul(rand,1664525)+1013904223)>>>0;return rand/4294967296}
