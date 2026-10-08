@@ -249,6 +249,10 @@ export function createWorld(container,{onNearby,onBoard,onPosition,onError,onNea
   const cameraFrom=new THREE.Vector3(),cameraDesired=new THREE.Vector3(),cameraDirection=new THREE.Vector3()
   let cameraState={...CAMERA_DEFAULTS},drag=null,contextLost=false,disposed=false
   let player={x:0,z:16},current='kyoto',near=false,nearStory=null,stopped=false,raf=0,lastTime=performance.now(),frameCount=0,paused=false
+  // Local-only QA diagnostics. Vite strips this from production builds.
+  if(import.meta.env.DEV)window.__KISEKI_QA__={
+    snapshot:()=>({x:player.x,z:player.z,frameCount,paused,keys:[...keys],stopped,region:current})
+  }
   function setRegion(id){
     const place=locationById(id);current=place.id;living=null;freeMeshes(map)
     const bg=new THREE.Color(({kyoto:'#ead2b9',tokyo:'#b9b9c1',hakone:'#c3d2c6',kamakura:'#cadfe0'})[id]||'#ead2b9')
@@ -436,6 +440,7 @@ export function createWorld(container,{onNearby,onBoard,onPosition,onError,onNea
     board(){if(near)onBoard?.(current)},
     current:()=>current,
     dispose(){
+      if(import.meta.env.DEV)delete window.__KISEKI_QA__
       disposed=true;stopped=true;cancelAnimationFrame(raf);ro?.disconnect()
       window.removeEventListener('keydown',down);window.removeEventListener('keyup',up);window.removeEventListener('blur',blur);window.removeEventListener('resize',resize)
       renderer.domElement.removeEventListener('webglcontextlost',lost)
