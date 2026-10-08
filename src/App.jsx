@@ -22,6 +22,7 @@ export default function App(){
   const storyFocus=useRef(null)
   const [pos,setPos]=useState({x:0,z:16})
   const [error,setError]=useState('')
+  const destinationRef=useRef(null)
   const [traveling,setTraveling]=useState(false)
   const [travelStage,setTravelStage]=useState('')
   const [weather,setWeather]=useState('golden')
@@ -79,16 +80,27 @@ export default function App(){
     ])journeyRef.current=nextJourneyState(journeyRef.current,event)
     if(journeyRef.current.phase!==PHASES.BOARDING)return
     busy.current=true
+    destinationRef.current=id
     setStoryId(null);setNearStory(null);setGoing(id);setTraveling(true)
     world.current?.setInputEnabled?.(false)
     showJourneyStage('boarding',id)
   }
   function skipJourney(){
     if(!busy.current)return
-    journeyRef.current=nextJourneyState(journeyRef.current,{type:'SKIP'})
-    const phase=journeyRef.current.phase
-    if(phase===PHASES.REVEAL)showJourneyStage('reveal',going)
-    else if(phase===PHASES.EXITING)showJourneyStage('exiting',going)
+    // A true Skip immediately reaches the destination. No timed reveal or
+    // re-triggered timeout can leave a user stuck on the train when rendering
+    // slow/high-detail WebGL frames (or after a mobile context loss).
+    const destination=destinationRef.current||going
+    try{
+      if(!locationById(destination))throw new Error('Unknown destination')
+      world.current?.setRegion(destination)
+      setHere(destination)
+      setOpen(false)
+    }catch(err){
+      setError(err?.message||'Could not finish the rail transfer.')
+    }finally{
+      finishJourney()
+    }
   }
   travelFn.current=travel
   useEffect(()=>{
