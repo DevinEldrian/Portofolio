@@ -1,5 +1,6 @@
 import React,{useCallback,useEffect,useRef,useState} from 'react'
 import {createWorld} from './world.js'
+import WorldAtlas from './WorldAtlas.jsx'
 import {LOCATIONS,locationById,nextLocation} from './locations.js'
 import QuickView from './QuickView.jsx'
 import {getHotspot} from './portfolioContent.js'
@@ -12,6 +13,8 @@ function Arrow(){return <span aria-hidden="true">↗</span>}
 export default function App(){
   const holder=useRef(null),world=useRef(null),travelFn=useRef(null),busy=useRef(false),timer=useRef(0),stageRef=useRef(''),journeyRef=useRef(initialJourney())
   const [here,setHere]=useState('kyoto')
+  const [landing,setLanding]=useState(()=>typeof window!=='undefined'&&!new URLSearchParams(window.location.search).has('play'))
+  const [firstStop,setFirstStop]=useState('kyoto')
   const [near,setNear]=useState(false)
   const [nearStory,setNearStory]=useState(null)
   const [storyId,setStoryId]=useState(null)
@@ -88,13 +91,14 @@ export default function App(){
   }
   travelFn.current=travel
   useEffect(()=>{
+    if(landing||!holder.current)return
     try{world.current=createWorld(holder.current,{
       onNearby:setNear,onPosition:setPos,onError:setError,
       onNearHotspot:setNearStory,onHotspot:setStoryId,
       onBoard:id=>travelFn.current(nextLocation(id).id)
-    })}catch(err){setError(err?.message||'3D could not start.')}
+    });if(firstStop!=='kyoto')world.current.setRegion(firstStop)}catch(err){setError(err?.message||'3D could not start.')}
     return()=>{window.clearTimeout(timer.current);world.current?.dispose();world.current=null}
-  },[])
+  },[landing])
   useEffect(()=>{world.current?.setInputEnabled?.(!quickView&&!storyId&&!traveling)},[quickView,storyId,traveling])
   useEffect(()=>{world.current?.setWeather?.(weather)},[weather])
   useEffect(()=>{world.current?.setPerformanceMode?.(lowGraphics)},[lowGraphics])
@@ -117,12 +121,19 @@ export default function App(){
       onPointerDown={e=>{e.preventDefault();e.currentTarget.setPointerCapture?.(e.pointerId);world.current?.setInput(key,true)}}
       onPointerUp={release} onPointerCancel={release} onLostPointerCapture={release}>{character}</button>
   }
+  if(landing)return <>
+    <WorldAtlas
+      onStart={id=>{setFirstStop(id);setHere(id);setOpen(false);setLanding(false)}}
+      onQuickView={()=>setQuickView(true)}
+    />
+    {quickView&&<QuickView onClose={closeQuickView}/>}
+  </>
   return <div className="experience" style={{'--accent':active.accent}}>
     <div className="canvas" ref={holder} role="region" tabIndex={0} aria-label={'Interactive 3D Japanese destination: '+active.city}/>
     <div className="vignette" aria-hidden="true"/>
     <header className="header">
       <a className="brand" href="https://github.com/DevinEldrian" target="_blank" rel="noopener noreferrer" aria-label="Devin GitHub profile">
-        <span className="brand-symbol" lang="ja">旅</span><span><strong>DEVIN<span className="brand-period">.</span></strong><small>AN INTERACTIVE JOURNEY</small></span>
+        <span className="brand-symbol" lang="ja">旅</span><span><strong>KISEKI<span className="brand-period">.</span></strong><small>THE WORLD OF DEVIN ELDRIAN WIJAYA</small></span>
       </a>
       <div className="header-mode"><i/> WORLD EXPLORER <span>/</span> JAPAN 2026</div>
       <div className="qv-header-actions"><button className="qv-open" onClick={()=>setQuickView(true)}>QUICK VIEW ↗</button><button className="guide-toggle" onClick={()=>setGuide(x=>!x)}>{guide?'CLOSE GUIDE':'HOW TO PLAY'} <Arrow/></button></div>
