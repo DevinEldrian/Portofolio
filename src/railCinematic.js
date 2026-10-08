@@ -93,7 +93,7 @@ export function createRailCinematic(scene){
         if(!c.isMesh)return
         c.geometry?.dispose()
         if(Array.isArray(c.material))c.material.forEach(m=>m.dispose())
-        else c.material?.dispose()
+        else if(!c.material?.userData?.persistentPBR)c.material?.dispose()
       })
       scene.remove(cabin)
     }
