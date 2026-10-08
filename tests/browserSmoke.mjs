@@ -22,6 +22,13 @@ try{
   assert.ok(size[0]>=600&&size[1]>=350,'canvas dimensions too small')
   await page.screenshot({path:'artifacts/kyoto-desktop.png',fullPage:false})
   console.log('PASS: browser launched an actual WebGL Kyoto frame');passes++
+  await page.waitForFunction(()=>{
+    const status=window.__KISEKI_QA__?.snapshot()?.character
+    return status==='rigged-animated'||status==='rigged-no-walk-clip'
+  },{timeout:18000})
+  const rigStatus=await page.evaluate(()=>window.__KISEKI_QA__.snapshot().character)
+  assert.ok(rigStatus.startsWith('rigged-'),'CC0 GLB failed to replace the uncanny fallback')
+  console.log('PASS: genuine CC0 rigged human GLB loaded and displayed:',rigStatus);passes++
 
   // Use a *real focusable* canvas container and observe the world-space pose,
   // not only a HUD icon updated once every eight render frames.
