@@ -21,6 +21,7 @@ export default function App(){
   const [traveling,setTraveling]=useState(false)
   const [travelStage,setTravelStage]=useState('')
   const [weather,setWeather]=useState('golden')
+  const [lowGraphics,setLowGraphics]=useState(()=>typeof window!=='undefined'&&window.matchMedia('(max-width: 760px)').matches)
   const [going,setGoing]=useState('tokyo')
   const [open,setOpen]=useState(true)
   const [guide,setGuide]=useState(false)
@@ -96,6 +97,7 @@ export default function App(){
   },[])
   useEffect(()=>{world.current?.setInputEnabled?.(!quickView&&!storyId&&!traveling)},[quickView,storyId,traveling])
   useEffect(()=>{world.current?.setWeather?.(weather)},[weather])
+  useEffect(()=>{world.current?.setPerformanceMode?.(lowGraphics)},[lowGraphics])
   useEffect(()=>{
     if(!traveling)return
     const onEscape=e=>{if(e.key==='Escape'){e.preventDefault();skipJourney()}}
@@ -160,6 +162,7 @@ export default function App(){
       <span>ARASHIYAMA · AUTUMN</span>
       <button aria-pressed={weather==='golden'} onClick={()=>setWeather('golden')}>GOLDEN HOUR</button>
       <button aria-pressed={weather==='drizzle'} onClick={()=>setWeather('drizzle')}>LIGHT DRIZZLE</button>
+      <button aria-pressed={lowGraphics} onClick={()=>setLowGraphics(v=>!v)}>LOW POWER {lowGraphics?'ON':'OFF'}</button>
     </div>}
     {guide&&<aside className="guide" aria-label="Controls"><h3>EXPLORER'S GUIDE</h3>
       <p><kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd><span>Move avatar</span></p>
