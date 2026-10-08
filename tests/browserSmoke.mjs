@@ -79,8 +79,12 @@ try{
   assert.ok(riverStop.z<=55.26,
     'avatar walked through Katsura water away from bridge at z='+riverStop.z)
   await put(0,54)
+  const bridgeBefore=await read()
   await page.keyboard.down('s')
-  await page.waitForTimeout(1800)
+  // SwiftShader may render only ~2 frames in 1.8 seconds. Require actual
+  // frames rather than a fixed wall-clock interval before checking travel.
+  await page.waitForFunction(start=>window.__KISEKI_QA__?.snapshot().frameCount>=start+4,
+    bridgeBefore.frameCount,{timeout:15000,polling:250})
   await page.keyboard.up('s')
   const bridgeStep=await read()
   assert.ok(bridgeStep.z>55.45,
