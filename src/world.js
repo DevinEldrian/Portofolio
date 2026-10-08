@@ -3,6 +3,7 @@ import {locationById} from './locations.js'
 import {move,nearStation} from './gameLogic.js'
 import {HOTSPOT_POSITIONS,nearestHotspot} from './hotspotLogic.js'
 import {HOTSPOTS} from './portfolioContent.js'
+import {CAMERA_DEFAULTS,cameraAfterInput,cameraPose} from './cameraLogic.js'
 
 const STATION={x:20,z:-10}
 const EMPTY_KEYS=new Set()
@@ -51,7 +52,8 @@ function torii(g,z,scale=1){
   block(g,0,7.1*scale,z,8.8*scale,.43*scale,.7*scale,red)
 }
 function house(g,x,z,c='#a89a81',roof='#444849'){
-  block(g,x,3.3,z,12,6.6,9,c);block(g,x,7.1,z,13.5,1.1,10.3,roof)
+  const wall=block(g,x,3.3,z,12,6.6,9,c);wall.userData.cameraBlocker=true
+  block(g,x,7.1,z,13.5,1.1,10.3,roof)
   for(let i=-1;i<=1;i++){
     block(g,x+i*3.5,3.7,z+4.58,2.8,3.4,.22,'#735e50')
     block(g,x+i*3.5,4,z+4.73,2.15,2.3,.18,mat('#e7d8ba',{emissive:'#e7be86',emissiveIntensity:.15}))
@@ -103,7 +105,7 @@ function addStoryKiosks(g){
 function addStation(g,place){
   const {x,z}=STATION
   ground(g,x,z,28,18,'#b5ac9b',.14)
-  block(g,x,3.3,z,22,6.6,12,'#e4ddcd')
+  const stationWall=block(g,x,3.3,z,22,6.6,12,'#e4ddcd');stationWall.userData.cameraBlocker=true
   block(g,x,7.4,z,25,1.45,14,'#35494b')
   block(g,x,6.78,z+7,25,.4,.45,place.accent)
   for(let i=-2;i<=2;i++)block(g,x+i*4.15,3.2,z+6.1,3,4.2,.14,'#a1c8c9')
@@ -223,19 +225,28 @@ export function createWorld(container,{onNearby,onBoard,onPosition,onError,onNea
   const keys=new Set()
   const raycaster=new THREE.Raycaster()
   const pointer=new THREE.Vector2()
+  const cameraRaycaster=new THREE.Raycaster()
+  const cameraObstacles=[]
+  const cameraFrom=new THREE.Vector3(),cameraDesired=new THREE.Vector3(),cameraDirection=new THREE.Vector3()
+  let cameraState={...CAMERA_DEFAULTS},drag=null,contextLost=false,disposed=false
   let player={x:0,z:16},current='kyoto',near=false,nearStory=null,stopped=false,raf=0,lastTime=performance.now(),frameCount=0,paused=false
   function setRegion(id){
     const place=locationById(id);current=place.id;freeMeshes(map)
     const bg=new THREE.Color(({kyoto:'#ead2b9',tokyo:'#b9b9c1',hakone:'#c3d2c6',kamakura:'#cadfe0'})[id]||'#ead2b9')
     scene.background=bg;scene.fog=new THREE.FogExp2(bg,.0048)
     decorate(map,id);addStation(map,place);if(id==='kyoto')addStoryKiosks(map)
+    cameraObstacles.length=0
+    map.traverse(node=>{if(node.isMesh&&node.userData.cameraBlocker)cameraObstacles.push(node)})
+    cameraState={...CAMERA_DEFAULTS}
     player={x:0,z:16};person.g.position.set(0,.1,16)
-    camera.position.set(27,27,59);camera.lookAt(0,3,16)
+    const start=cameraPose({x:player.x,y:3,z:player.z},cameraState)
+    camera.position.set(start.position.x,start.position.y,start.position.z)
+    camera.lookAt(start.target.x,start.target.y,start.target.z)
     near=false;nearStory=null;onNearby?.(false);onNearHotspot?.(null);onPosition?.(player)
   }
   function down(e){
     if(paused)return
-    if(e.target instanceof HTMLElement && ['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName))return
+    if(e.target instanceof HTMLElement && e.target.closest('input,textarea,select,button,a,[role="dialog"],[contenteditable="true"]'))return
     const k=e.key.toLowerCase()
     if(['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright','shift','e'].includes(k))e.preventDefault()
     if(k==='e'&&!e.repeat){if(nearStory)onHotspot?.(nearStory);else if(near)onBoard?.(current)}
@@ -254,9 +265,43 @@ export function createWorld(container,{onNearby,onBoard,onPosition,onError,onNea
       if(node?.userData?.hotspotId){onHotspot?.(node.userData.hotspotId);return}
     }
   }
+  function orbitStart(e){
+    if(paused||e.button!==0)return
+    drag={id:e.pointerId,x:e.clientX,y:e.clientY,moved:false}
+    renderer.domElement.setPointerCapture?.(e.pointerId)
+  }
+  function orbitMove(e){
+    if(paused||!drag||drag.id!==e.pointerId)return
+    const dx=e.clientX-drag.x,dy=e.clientY-drag.y
+    if(Math.abs(dx)+Math.abs(dy)>2)drag.moved=true
+    if(drag.moved)cameraState=cameraAfterInput(cameraState,{yaw:-dx*.006,pitch:dy*.006})
+    drag.x=e.clientX;drag.y=e.clientY
+  }
+  function orbitEnd(e){
+    const moved=drag?.id===e.pointerId&&drag.moved
+    if(drag?.id===e.pointerId)drag=null
+    if(!moved)pickStory(e)
+  }
+  function orbitCancel(){drag=null}
+  function zoom(e){
+    if(paused)return
+    e.preventDefault()
+    cameraState=cameraAfterInput(cameraState,{zoom:e.deltaY*.016})
+  }
   function up(e){keys.delete(e.key.toLowerCase())}
   function blur(){keys.clear()}
-  function lost(e){e.preventDefault();stopped=true;onError?.('The graphics context was lost. Please reload to restore 3D rendering.')}
+  function lost(e){
+    e.preventDefault()
+    if(disposed)return
+    contextLost=true;stopped=true;cancelAnimationFrame(raf);keys.clear();drag=null
+    onError?.('The graphics context was lost. Waiting for the browser to restore it; Quick View remains available.')
+  }
+  function restored(){
+    if(disposed||!contextLost)return
+    contextLost=false;stopped=false;lastTime=performance.now()
+    resize();onError?.('')
+    raf=requestAnimationFrame(frame)
+  }
   function resize(){
     const w=Math.max(1,container.clientWidth),h=Math.max(1,container.clientHeight)
     camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h,false)
@@ -264,7 +309,13 @@ export function createWorld(container,{onNearby,onBoard,onPosition,onError,onNea
   const ro=typeof ResizeObserver!=='undefined'?new ResizeObserver(resize):null;ro?.observe(container)
   window.addEventListener('keydown',down);window.addEventListener('keyup',up);window.addEventListener('blur',blur);window.addEventListener('resize',resize)
   renderer.domElement.addEventListener('webglcontextlost',lost)
-  renderer.domElement.addEventListener('pointerup',pickStory)
+  renderer.domElement.addEventListener('webglcontextrestored',restored)
+  renderer.domElement.addEventListener('pointerdown',orbitStart)
+  renderer.domElement.addEventListener('pointermove',orbitMove)
+  renderer.domElement.addEventListener('pointerup',orbitEnd)
+  renderer.domElement.addEventListener('pointercancel',orbitCancel)
+  renderer.domElement.addEventListener('lostpointercapture',orbitCancel)
+  renderer.domElement.addEventListener('wheel',zoom,{passive:false})
   function frame(now){
     if(stopped)return
     raf=requestAnimationFrame(frame)
@@ -278,8 +329,22 @@ export function createWorld(container,{onNearby,onBoard,onPosition,onError,onNea
       person.legA.rotation.x=swing;person.legB.rotation.x=-swing
       person.armA.rotation.x=-swing*.75;person.armB.rotation.x=swing*.75
       circle.position.set(player.x,.08,player.z)
-      camera.position.lerp(vector(player.x+27,27,player.z+43),Math.min(1,dt*3.5))
-      camera.lookAt(player.x,3,player.z)
+      const pose=cameraPose({x:player.x,y:3,z:player.z},cameraState)
+      cameraFrom.set(pose.target.x,pose.target.y,pose.target.z)
+      cameraDesired.set(pose.position.x,pose.position.y,pose.position.z)
+      cameraDirection.copy(cameraDesired).sub(cameraFrom)
+      const length=cameraDirection.length()
+      if(length>.001){
+        cameraDirection.multiplyScalar(1/length)
+        cameraRaycaster.set(cameraFrom,cameraDirection)
+        cameraRaycaster.near=.25;cameraRaycaster.far=length
+        const obstruction=cameraRaycaster.intersectObjects(cameraObstacles,false)[0]
+        if(obstruction&&obstruction.distance<length)
+          cameraDesired.copy(cameraFrom).addScaledVector(cameraDirection,Math.max(2.6,obstruction.distance-.8))
+      }
+      cameraDesired.y=Math.max(2.5,cameraDesired.y)
+      camera.position.lerp(cameraDesired,Math.min(1,dt*8))
+      camera.lookAt(pose.target.x,pose.target.y,pose.target.z)
       const n=nearStation(player,STATION)
       if(n!==near){near=n;onNearby?.(near)}
       const h=current==='kyoto'?nearestHotspot(player):null
@@ -292,14 +357,20 @@ export function createWorld(container,{onNearby,onBoard,onPosition,onError,onNea
   return {
     setRegion,
     setInput(key,active){if(paused)return;if(active)keys.add(key);else keys.delete(key)},
-    setInputEnabled(enabled){paused=!enabled;if(paused)keys.clear()},
+    setInputEnabled(enabled){paused=!enabled;if(paused){keys.clear();drag=null}},
     board(){if(near)onBoard?.(current)},
     current:()=>current,
     dispose(){
-      stopped=true;cancelAnimationFrame(raf);ro?.disconnect()
+      disposed=true;stopped=true;cancelAnimationFrame(raf);ro?.disconnect()
       window.removeEventListener('keydown',down);window.removeEventListener('keyup',up);window.removeEventListener('blur',blur);window.removeEventListener('resize',resize)
       renderer.domElement.removeEventListener('webglcontextlost',lost)
-      renderer.domElement.removeEventListener('pointerup',pickStory)
+      renderer.domElement.removeEventListener('webglcontextrestored',restored)
+      renderer.domElement.removeEventListener('pointerdown',orbitStart)
+      renderer.domElement.removeEventListener('pointermove',orbitMove)
+      renderer.domElement.removeEventListener('pointerup',orbitEnd)
+      renderer.domElement.removeEventListener('pointercancel',orbitCancel)
+      renderer.domElement.removeEventListener('lostpointercapture',orbitCancel)
+      renderer.domElement.removeEventListener('wheel',zoom)
       freeMeshes(map);freeMeshes(person.g)
       circle.geometry.dispose();circle.material.dispose()
       renderer.dispose();renderer.domElement.remove()
