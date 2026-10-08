@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import {materialPBR} from './pbrMaterials.js'
 
 const solid=(color)=>new THREE.MeshStandardMaterial({color,roughness:.78,metalness:.06})
 function block(g,x,y,z,w,h,d,color){
@@ -16,8 +17,8 @@ export function createRailCinematic(scene){
   cabin.name='visible train cabin and window vista'
   scene.add(cabin)
   cabin.visible=false
-  block(cabin,0,.36,0,13,.7,19,'#6d5351')
-  block(cabin,0,8.6,0,13,.5,19,'#e7e1ce')
+  block(cabin,0,.36,0,13,.7,19,materialPBR('fabric'))
+  block(cabin,0,8.6,0,13,.5,19,materialPBR('bronze',{color:'#c5beb4'}))
   for(const x of [-6.35,6.35]){
     block(cabin,x,2.1,0,.2,3.6,19,'#644b67')
     block(cabin,x,7.3,0,.35,2.2,19,'#675068')
