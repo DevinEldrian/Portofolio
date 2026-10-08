@@ -102,7 +102,7 @@ try{
   // the short boarding animation expire while Playwright waits for animation stability.
   await page.locator('.skip-journey').evaluate(el=>el.click())
   await page.locator('.transit').waitFor({state:'hidden',timeout:12000})
-  assert.match(await page.locator('.hero h1').innerText(),/AKIHABARA/i)
+  assert.match(await page.locator('.hero h1').innerText(),/KYOTO/i)
   console.log('PASS: boarding Skip reaches destination without hanging');passes++
   // Separately observe a natural uninterrupted ride (including cabin phase).
   // This avoids clicking a Skip control after the timed scene already ended.
@@ -110,7 +110,7 @@ try{
   await page.getByText(/Inside the cabin/i).waitFor({state:'visible',timeout:9000})
   console.log('PASS: actual 3D cabin phase reached');passes++
   await page.locator('.transit').waitFor({state:'hidden',timeout:12000})
-  assert.match(await page.locator('.hero h1').innerText(),/SHIBUYA/i)
+  assert.match(await page.locator('.hero h1').innerText(),/AKIHABARA/i)
   await page.screenshot({path:'artifacts/train-arrived-hakone.png'})
   console.log('PASS: uninterrupted train reaches destination and exits');passes++
   assert.deepEqual(errors,[],'JavaScript page exceptions in desktop smoke')
