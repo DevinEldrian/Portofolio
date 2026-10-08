@@ -116,9 +116,9 @@ function lantern(g,x,z,i){
 }
 export function createJapanDistrict(root,id){
   const g=new THREE.Group();g.name='KISEKI detailed '+id;root.add(g)
+  const npcs=[],staticColliders=[]
   const expansion=createRegionExpansion(root,id)
   staticColliders.push(...expansion.colliders)
-  const npcs=[],staticColliders=[]
   const r=(()=>{let seed=id==='akihabara'?37:id==='shibuya'?202:97;return()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296}})()
   if(id==='akihabara'){
     floor(g,0,0,520,520,materialPBR('pavement',{color:'#555d69'}))
