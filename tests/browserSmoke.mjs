@@ -4,10 +4,9 @@ import {chromium} from 'playwright'
 
 const url='http://127.0.0.1:4175'
 await mkdir('artifacts',{recursive:true})
-const browser=await chromium.launch({
-  headless:true,
-  args:['--no-sandbox','--disable-dev-shm-usage','--use-gl=angle','--use-angle=swiftshader','--enable-webgl','--enable-unsafe-swiftshader']
-})
+const browserFlags=['--no-sandbox','--disable-dev-shm-usage','--use-gl=angle','--use-angle=swiftshader','--enable-webgl','--enable-unsafe-swiftshader']
+const browser=await chromium.launch({headless:true,args:browserFlags})
+let mobileBrowser
 let passes=0
 let page
 try{
@@ -109,7 +108,11 @@ try{
   console.log('PASS: uninterrupted train reaches destination and exits');passes++
   assert.deepEqual(errors,[],'JavaScript page exceptions in desktop smoke')
 
-  const mobile=await browser.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true,reducedMotion:'reduce'})
+  // Chromium SwiftShader may exhaust GPU contexts after desktop screenshots.
+  // Browser restart isolates the mobile session for a meaningful independent test.
+  await page.close()
+  mobileBrowser=await chromium.launch({headless:true,args:browserFlags})
+  const mobile=await mobileBrowser.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true,reducedMotion:'reduce'})
   const mobileErrors=[]
   mobile.on('pageerror',err=>mobileErrors.push(String(err.message)))
   await mobile.goto(url,{waitUntil:'domcontentloaded',timeout:30000})
@@ -126,4 +129,4 @@ try{
   if(page)await page.screenshot({path:'artifacts/browser-failure.png'}).catch(()=>{})
   console.error('BROWSER SMOKE FAIL:',error.stack||String(error))
   process.exitCode=1
-}finally{await browser.close()}
+}finally{await mobileBrowser?.close();await browser.close()}
