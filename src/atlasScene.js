@@ -201,8 +201,8 @@ export function createAtlas(container,{onSelect}={}){
   composer.addPass(new UnrealBloomPass(new THREE.Vector2(Math.max(1,container.clientWidth),Math.max(1,container.clientHeight)),.45,.52,.84))
   composer.addPass(new OutputPass())
   const zones=[
-    {x:-89,z:-20,id:'tokyo'}, {x:79,z:-38,id:'kyoto'},
-    {x:79,z:75,id:'kamakura'}, {x:0,z:22,id:'kyoto'}
+    {x:-89,z:-20,id:'akihabara'}, {x:79,z:-38,id:'arashiyama'},
+    {x:79,z:75,id:'kyoto'}, {x:0,z:22,id:'arashiyama'}
   ]
   const raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2()
   function click(e){
@@ -214,7 +214,7 @@ export function createAtlas(container,{onSelect}={}){
     const near=zones.reduce((best,z)=>{
       const cx=hits[0].point.x,cz=hits[0].point.z,d=Math.hypot(cx-z.x,cz-z.z)
       return d<best.distance?{id:z.id,distance:d}:best
-    },{id:'kyoto',distance:Infinity})
+    },{id:'arashiyama',distance:Infinity})
     onSelect?.(near.id)
   }
   renderer.domElement.addEventListener('click',click)
