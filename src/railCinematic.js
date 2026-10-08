@@ -69,8 +69,8 @@ export function createRailCinematic(scene){
         person.g.rotation.y=-.35
         person.legA.rotation.x=0
         person.legB.rotation.x=0
-        camera.position.set(5.4,6,201.5)
-        camera.lookAt(-.8,3.3,190)
+        camera.position.set(4.8,5.6,194.5)
+        camera.lookAt(-1,3.3,188)
         if(!reducedMotion)scenery.position.z=Math.sin(now*.0007)*2.4
       }else if(phase==='reveal'){
         person.g.position.set(45,.12,-10)
