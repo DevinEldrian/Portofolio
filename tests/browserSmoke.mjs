@@ -37,7 +37,10 @@ try{
   const before=await read()
   assert.ok(before,'development QA snapshot was not installed')
   await page.keyboard.down('w')
-  await page.waitForTimeout(1600)
+  // Software WebGL may advance just one frame per 1.6s under full graphics;
+  // measure movement after 3 actual simulation frames.
+  await page.waitForFunction(start=>window.__KISEKI_QA__?.snapshot()?.frameCount>=start+3,
+    before.frameCount,{timeout:20000,polling:250})
   const held=await read()
   await page.keyboard.up('w')
   await page.waitForTimeout(150)
