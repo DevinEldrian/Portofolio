@@ -33,6 +33,11 @@ try{
   assert.notEqual(after,before,'W key did not update player position')
   assert.equal(await page.locator('.error-backdrop').count(),0,'W caused a blank screen/error')
   console.log('PASS: W movement, camera render and finite world frame');passes++
+  // Return to the kiosk approach before testing story interaction.
+  await page.keyboard.down('s')
+  await page.waitForTimeout(700)
+  await page.keyboard.up('s')
+  await page.waitForTimeout(180)
 
   await page.getByRole('button',{name:'LIGHT DRIZZLE'}).click()
   assert.equal(await page.getByRole('button',{name:'LIGHT DRIZZLE'}).getAttribute('aria-pressed'),'true')
