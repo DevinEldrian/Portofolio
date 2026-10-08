@@ -12,9 +12,9 @@ function Arrow(){return <span aria-hidden="true">↗</span>}
 
 export default function App(){
   const holder=useRef(null),world=useRef(null),travelFn=useRef(null),busy=useRef(false),timer=useRef(0),stageRef=useRef(''),journeyRef=useRef(initialJourney())
-  const [here,setHere]=useState('kyoto')
+  const [here,setHere]=useState('arashiyama')
   const [landing,setLanding]=useState(()=>typeof window!=='undefined'&&!new URLSearchParams(window.location.search).has('play'))
-  const [firstStop,setFirstStop]=useState('kyoto')
+  const [firstStop,setFirstStop]=useState('arashiyama')
   const [near,setNear]=useState(false)
   const [nearStory,setNearStory]=useState(null)
   const [storyId,setStoryId]=useState(null)
@@ -25,7 +25,7 @@ export default function App(){
   const [travelStage,setTravelStage]=useState('')
   const [weather,setWeather]=useState('golden')
   const [lowGraphics,setLowGraphics]=useState(()=>typeof window!=='undefined'&&window.matchMedia('(max-width: 760px)').matches)
-  const [going,setGoing]=useState('tokyo')
+  const [going,setGoing]=useState('akihabara')
   const [open,setOpen]=useState(true)
   const [guide,setGuide]=useState(false)
   const [quickView,setQuickView]=useState(false)
@@ -96,7 +96,7 @@ export default function App(){
       onNearby:setNear,onPosition:setPos,onError:setError,
       onNearHotspot:setNearStory,onHotspot:setStoryId,
       onBoard:id=>travelFn.current(nextLocation(id).id)
-    });if(firstStop!=='kyoto')world.current.setRegion(firstStop)}catch(err){setError(err?.message||'3D could not start.')}
+    });if(firstStop!=='arashiyama')world.current.setRegion(firstStop)}catch(err){setError(err?.message||'3D could not start.')}
     return()=>{window.clearTimeout(timer.current);world.current?.dispose();world.current=null}
   },[landing])
   useEffect(()=>{world.current?.setInputEnabled?.(!quickView&&!storyId&&!traveling)},[quickView,storyId,traveling])
@@ -166,10 +166,10 @@ export default function App(){
       <div className="panel-heading">{active.section.toUpperCase()} <span>✳</span><button onClick={()=>setOpen(false)} aria-label="Close details">×</button></div>
       <h3>{active.panel}</h3><p>{active.detail}</p>
       <ul>{active.points.map((point,i)=><li key={point}><span>0{i+1}</span>{point}</li>)}</ul>
-      {here==='kamakura'&&<a className="github-cta" href="https://github.com/DevinEldrian" target="_blank" rel="noopener noreferrer">CONNECT ON GITHUB ↗</a>}
+      {here==='kyoto'&&<a className="github-cta" href="https://github.com/DevinEldrian" target="_blank" rel="noopener noreferrer">CONNECT ON GITHUB ↗</a>}
       <span className="panel-kanji" lang="ja">{active.jp}</span>
     </aside>}
-    {here==='kyoto'&&<div className="weather-mode" role="group" aria-label="Kyoto weather">
+    {here==='arashiyama'&&<div className="weather-mode" role="group" aria-label="Kyoto weather">
       <span>ARASHIYAMA · AUTUMN</span>
       <button aria-pressed={weather==='golden'} onClick={()=>setWeather('golden')}>GOLDEN HOUR</button>
       <button aria-pressed={weather==='drizzle'} onClick={()=>setWeather('drizzle')}>LIGHT DRIZZLE</button>
