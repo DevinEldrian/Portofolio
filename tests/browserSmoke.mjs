@@ -23,21 +23,28 @@ try{
   await page.screenshot({path:'artifacts/kyoto-desktop.png',fullPage:false})
   console.log('PASS: browser launched an actual WebGL Kyoto frame');passes++
 
-  const marker=page.locator('.you-point')
-  const before=await marker.getAttribute('style')
+  // Use a *real focusable* canvas container and observe the world-space pose,
+  // not only a HUD icon updated once every eight render frames.
+  await page.locator('.canvas').focus()
+  const read=()=>page.evaluate(()=>window.__KISEKI_QA__?.snapshot())
+  const before=await read()
+  assert.ok(before,'development QA snapshot was not installed')
   await page.keyboard.down('w')
-  await page.waitForTimeout(700)
+  await page.waitForTimeout(1600)
+  const held=await read()
   await page.keyboard.up('w')
   await page.waitForTimeout(150)
-  const after=await marker.getAttribute('style')
-  assert.notEqual(after,before,'W key did not update player position')
+  const after=await read()
+  console.log('W INPUT DIAGNOSTICS:',JSON.stringify({before,held,after}))
+  assert.ok(after.frameCount>before.frameCount,'WebGL frames stalled during W test')
+  assert.ok(after.z<before.z-.2,'W key failed to move avatar forward')
   assert.equal(await page.locator('.error-backdrop').count(),0,'W caused a blank screen/error')
   console.log('PASS: W movement, camera render and finite world frame');passes++
-  // Return to the kiosk approach before testing story interaction.
+  // Return near the shop CV kiosk for the story test.
   await page.keyboard.down('s')
-  await page.waitForTimeout(700)
+  await page.waitForTimeout(1600)
   await page.keyboard.up('s')
-  await page.waitForTimeout(180)
+  await page.waitForTimeout(200)
 
   await page.getByRole('button',{name:'LIGHT DRIZZLE'}).click()
   assert.equal(await page.getByRole('button',{name:'LIGHT DRIZZLE'}).getAttribute('aria-pressed'),'true')
