@@ -3,6 +3,7 @@
  * Ground-based footprints are rectangles or cylinders, not a mesh raycaster.
  * Step splitting prevents sprinting through thin walls at low frame rates.
  */
+import {LIMIT} from './gameLogic.js'
 export const AVATAR_RADIUS=0.85
 const isFinitePoint=p=>Number.isFinite(p?.x)&&Number.isFinite(p?.z)
 const cl=(x,a,b)=>Math.max(a,Math.min(b,x))
@@ -32,12 +33,12 @@ export function blocked(point,obstacles=[],radius=AVATAR_RADIUS){
  * destination cannot poison the render position or camera.
  */
 export function resolveWalk(from,to,obstacles=[],{
-  radius=AVATAR_RADIUS, limit=95,maxStep=.28
+  radius=AVATAR_RADIUS, limit=LIMIT,maxStep=.28
 }={}){
   if(!isFinitePoint(from))return {x:0,z:0,blocked:true}
   if(!isFinitePoint(to))return {x:from.x,z:from.z,blocked:true}
   const r=Number.isFinite(radius)&&radius>=0?radius:AVATAR_RADIUS
-  const l=Number.isFinite(limit)&&limit>r?limit:95
+  const l=Number.isFinite(limit)&&limit>r?limit:LIMIT
   const step=Number.isFinite(maxStep)&&maxStep>.02?Math.min(maxStep,1):.28
   const tx=cl(to.x,-l,l),tz=cl(to.z,-l,l)
   const dx=tx-from.x,dz=tz-from.z
