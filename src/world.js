@@ -214,19 +214,22 @@ export function createWorld(container,{onNearby,onBoard,onPosition,onError,onNea
   let renderer
   try{renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'})}
   catch{throw new Error('WebGL could not start. Try updating the browser or enabling graphics acceleration.')}
-  renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.75))
+  const mobile=typeof window!=='undefined'&&window.matchMedia?.('(max-width: 760px)')?.matches
+  const nativeDpr=typeof window!=='undefined'?window.devicePixelRatio||1:1
+  let lowPower=!!mobile
+  renderer.setPixelRatio(Math.min(nativeDpr,mobile?1.15:1.65))
   renderer.setSize(Math.max(1,container.clientWidth),Math.max(1,container.clientHeight))
   renderer.outputColorSpace=THREE.SRGBColorSpace
   renderer.toneMapping=THREE.ACESFilmicToneMapping
   renderer.toneMappingExposure=1.35
-  renderer.shadowMap.enabled=true
+  renderer.shadowMap.enabled=!lowPower
   renderer.shadowMap.type=THREE.PCFSoftShadowMap
   container.appendChild(renderer.domElement)
   const scene=new THREE.Scene()
   const camera=new THREE.PerspectiveCamera(54,1,.1,560)
   const hemi=new THREE.HemisphereLight('#fff3df','#899997',2.2);scene.add(hemi)
   const sun=new THREE.DirectionalLight('#fff0df',3)
-  sun.position.set(-35,70,45);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048)
+  sun.position.set(-35,70,45);sun.castShadow=!lowPower;sun.shadow.mapSize.set(mobile?1024:2048,mobile?1024:2048)
   Object.assign(sun.shadow.camera,{left:-100,right:100,top:100,bottom:-100})
   scene.add(sun)
   const map=new THREE.Group();scene.add(map)
@@ -252,6 +255,7 @@ export function createWorld(container,{onNearby,onBoard,onPosition,onError,onNea
     if(id==='kyoto')living=createKyotoLiving(map,{reducedMotion});else decorate(map,id)
     addStation(map,place);if(id==='kyoto')addStoryKiosks(map)
     living?.setWeather(weather)
+    living?.setPerformanceMode(lowPower)
     cameraObstacles.length=0
     solidFootprints.length=0
     map.updateMatrixWorld(true)
@@ -405,6 +409,14 @@ export function createWorld(container,{onNearby,onBoard,onPosition,onError,onNea
   setRegion('kyoto');resize();raf=requestAnimationFrame(frame)
   return {
     setRegion,
+    setPerformanceMode(enabled){
+      lowPower=!!enabled
+      renderer.setPixelRatio(Math.min(nativeDpr,lowPower?1:mobile?1.15:1.65))
+      renderer.shadowMap.enabled=!lowPower
+      sun.castShadow=!lowPower
+      living?.setPerformanceMode(lowPower)
+      resize()
+    },
     setWeather(next){
       weather=next==='drizzle'?'drizzle':'golden'
       living?.setWeather(weather)
