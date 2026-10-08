@@ -132,7 +132,10 @@ export function createKyotoLiving(root,{reducedMotion=false}={}){
     ripple.material.transparent=true;ripple.material.opacity=.55
   }
   // Togetsukyo-inspired bridge: continuous crossing with support piers and parapets.
-  box(g,0,.65,73,12,1.1,53,'#a49b8e')
+  box(g,0,.55,73,12,.45,53,'#a49b8e')
+  // Low raised entry pads connect the promenade to the main bridge deck.
+  box(g,0,.29,44.5,11.8,.25,5,'#a49b8e')
+  box(g,0,.29,102,11.8,.25,5,'#a49b8e')
   for(let z=49;z<100;z+=5.2){
     for(const x of [-6.3,6.3]){
       pillar(g,x,1.65,z,.22,2.5,'#baac94')
@@ -146,8 +149,8 @@ export function createKyotoLiving(root,{reducedMotion=false}={}){
     const z=3+j*8.3
     shop(g,-23,z,names[j],j%2?'sweets':'tea',j)
     shop(g,23,z+2,names[(j+3)%6],j%2?'tea':'sweets',j+1)
-    staticColliders.push(rect(-23,z,12,11,'shop-west-'+j))
-    staticColliders.push(rect(23,z+2,12,11,'shop-east-'+j))
+    staticColliders.push(rect(-22,z,16,11,'shop-west-'+j))
+    staticColliders.push(rect(22,z+2,16,11,'shop-east-'+j))
   }
   // Destination markers aligned with connected paths.
   signedBoard(g,'KATSURA RIVER',-2,6.8,47,9.3,1.9)
