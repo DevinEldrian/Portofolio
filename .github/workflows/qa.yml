@@ -1,7 +1,7 @@
 name: Portfolio QA
 on:
   push:
-    branches: [main]
+    branches: [main, 'feat/xo-arashiyama-p0']
   pull_request:
     branches: [main]
 

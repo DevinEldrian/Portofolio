@@ -3,6 +3,7 @@ import {locationById} from './locations.js'
 import {move,nearStation} from './gameLogic.js'
 
 const STATION={x:20,z:-10}
+const EMPTY_KEYS=new Set()
 const mat=(c,extra={})=>new THREE.MeshStandardMaterial({color:c,roughness:.85,...extra})
 const vector=(x,y,z)=>new THREE.Vector3(x,y,z)
 const rng=seed=>()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296}
@@ -191,7 +192,7 @@ export function createWorld(container,{onNearby,onBoard,onPosition,onError}={}){
   const circle=new THREE.Mesh(new THREE.CircleGeometry(1.8,24),new THREE.MeshBasicMaterial({color:'#000000',transparent:true,opacity:.19}))
   circle.rotation.x=-Math.PI/2;scene.add(circle)
   const keys=new Set()
-  let player={x:0,z:16},current='kyoto',near=false,stopped=false,raf=0,lastTime=performance.now(),frameCount=0
+  let player={x:0,z:16},current='kyoto',near=false,stopped=false,raf=0,lastTime=performance.now(),frameCount=0,paused=false
   function setRegion(id){
     const place=locationById(id);current=place.id;freeMeshes(map)
     const bg=new THREE.Color(({kyoto:'#ead2b9',tokyo:'#b9b9c1',hakone:'#c3d2c6',kamakura:'#cadfe0'})[id]||'#ead2b9')
@@ -202,6 +203,7 @@ export function createWorld(container,{onNearby,onBoard,onPosition,onError}={}){
     near=false;onNearby?.(false);onPosition?.(player)
   }
   function down(e){
+    if(paused)return
     if(e.target instanceof HTMLElement && ['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName))return
     const k=e.key.toLowerCase()
     if(['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright','shift','e'].includes(k))e.preventDefault()
@@ -223,7 +225,7 @@ export function createWorld(container,{onNearby,onBoard,onPosition,onError}={}){
     raf=requestAnimationFrame(frame)
     const dt=Math.min(.05,Math.max(0,(now-lastTime)/1000));lastTime=now
     try{
-      const p=move(player,keys,dt)
+      const p=move(player,paused?EMPTY_KEYS:keys,dt)
       player={x:p.x,z:p.z}
       person.g.position.set(player.x,.13+(p.moving?Math.abs(Math.sin(now*.014))*.12:0),player.z)
       if(p.heading!==null){const a=Math.atan2(Math.sin(p.heading-person.g.rotation.y),Math.cos(p.heading-person.g.rotation.y));person.g.rotation.y+=a*.16}
@@ -242,7 +244,8 @@ export function createWorld(container,{onNearby,onBoard,onPosition,onError}={}){
   setRegion('kyoto');resize();raf=requestAnimationFrame(frame)
   return {
     setRegion,
-    setInput(key,active){if(active)keys.add(key);else keys.delete(key)},
+    setInput(key,active){if(paused)return;if(active)keys.add(key);else keys.delete(key)},
+    setInputEnabled(enabled){paused=!enabled;if(paused)keys.clear()},
     board(){if(near)onBoard?.(current)},
     current:()=>current,
     dispose(){

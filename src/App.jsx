@@ -1,6 +1,7 @@
-import React,{useEffect,useRef,useState} from 'react'
+import React,{useCallback,useEffect,useRef,useState} from 'react'
 import {createWorld} from './world.js'
 import {LOCATIONS,locationById,nextLocation} from './locations.js'
+import QuickView from './QuickView.jsx'
 
 function TrainIcon(){return <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><rect x="5" y="2" width="14" height="18" rx="4"/><path d="M5 11h14M9 7h6M8 22l2-2m4 0 2 2M8 16h.2M15.8 16h.2"/></svg>}
 function Arrow(){return <span aria-hidden="true">↗</span>}
@@ -15,6 +16,8 @@ export default function App(){
   const [going,setGoing]=useState('tokyo')
   const [open,setOpen]=useState(true)
   const [guide,setGuide]=useState(false)
+  const [quickView,setQuickView]=useState(false)
+  const closeQuickView=useCallback(()=>setQuickView(false),[])
   const active=locationById(here),next=nextLocation(here)
   function travel(id){
     if(busy.current||world.current?.current()===id)return
@@ -33,6 +36,7 @@ export default function App(){
     })}catch(err){setError(err?.message||'3D could not start.')}
     return()=>{window.clearTimeout(timer.current);world.current?.dispose();world.current=null}
   },[])
+  useEffect(()=>{world.current?.setInputEnabled?.(!quickView)},[quickView])
   function inputButton(key,character,title){
     const release=()=>world.current?.setInput(key,false)
     return <button className="touch-key" key={key} aria-label={title}
@@ -47,7 +51,7 @@ export default function App(){
         <span className="brand-symbol" lang="ja">旅</span><span><strong>DEVIN<span className="brand-period">.</span></strong><small>AN INTERACTIVE JOURNEY</small></span>
       </a>
       <div className="header-mode"><i/> WORLD EXPLORER <span>/</span> JAPAN 2026</div>
-      <button className="guide-toggle" onClick={()=>setGuide(x=>!x)}>{guide?'CLOSE GUIDE':'HOW TO PLAY'} <Arrow/></button>
+      <div className="qv-header-actions"><button className="qv-open" onClick={()=>setQuickView(true)}>QUICK VIEW ↗</button><button className="guide-toggle" onClick={()=>setGuide(x=>!x)}>{guide?'CLOSE GUIDE':'HOW TO PLAY'} <Arrow/></button></div>
     </header>
     <main className="main">
       <section className="hero" aria-live="polite">
@@ -98,6 +102,7 @@ export default function App(){
     </footer>
     <div className="footer-caption">A PORTFOLIO YOU CAN WALK THROUGH <span>✳</span> MADE WITH CURIOSITY</div>
     {traveling&&<div className="transit" role="status" aria-live="assertive"><div className="train-text"><span>NEXT STATION · 次の駅</span><TrainIcon/><h2>{locationById(going).city}</h2><p>Taking the scenic route...</p><div className="progress"><i/></div></div></div>}
-    {error&&<div className="error-backdrop" role="alert"><div className="error-card"><small>3D ENGINE</small><h2>We lost the scenery.</h2><p>{error}</p><p>Try reloading, updating the browser or enabling hardware acceleration.</p><button onClick={()=>location.reload()}>RELOAD EXPERIENCE ↗</button></div></div>}
+    {error&&<div className="error-backdrop" role="alert"><div className="error-card"><small>3D ENGINE</small><h2>We lost the scenery.</h2><p>{error}</p><p>Try reloading, updating the browser or enabling hardware acceleration.</p><button onClick={()=>setQuickView(true)}>OPEN CV / QUICK VIEW ↗</button> <button onClick={()=>location.reload()}>RELOAD EXPERIENCE ↗</button></div></div>}
+    {quickView&&<QuickView onClose={closeQuickView}/>}
   </div>
 }
