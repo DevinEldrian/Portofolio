@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import {mkdir} from 'node:fs/promises'
 import {chromium} from 'playwright'
 
-const url='http://127.0.0.1:4175'
+const url='http://127.0.0.1:4175/?play=1'
 await mkdir('artifacts',{recursive:true})
 const browserFlags=['--no-sandbox','--disable-dev-shm-usage','--use-gl=angle','--use-angle=swiftshader','--enable-webgl','--enable-unsafe-swiftshader']
 const browser=await chromium.launch({headless:true,args:browserFlags})
@@ -99,7 +99,7 @@ try{
   await page.getByText(/Avatar boarding/i).waitFor({state:'visible'})
   await page.getByRole('button',{name:/SKIP TO ARRIVAL/i}).click({timeout:3000})
   await page.locator('.transit').waitFor({state:'hidden',timeout:12000})
-  assert.match(await page.locator('.hero h1').innerText(),/TOKYO/i)
+  assert.match(await page.locator('.hero h1').innerText(),/AKIHABARA/i)
   console.log('PASS: boarding Skip reaches destination without hanging');passes++
   // Separately observe a natural uninterrupted ride (including cabin phase).
   // This avoids clicking a Skip control after the timed scene already ended.
@@ -107,7 +107,7 @@ try{
   await page.getByText(/Inside the cabin/i).waitFor({state:'visible',timeout:9000})
   console.log('PASS: actual 3D cabin phase reached');passes++
   await page.locator('.transit').waitFor({state:'hidden',timeout:12000})
-  assert.match(await page.locator('.hero h1').innerText(),/HAKONE/i)
+  assert.match(await page.locator('.hero h1').innerText(),/SHIBUYA/i)
   await page.screenshot({path:'artifacts/train-arrived-hakone.png'})
   console.log('PASS: uninterrupted train reaches destination and exits');passes++
   assert.deepEqual(errors,[],'JavaScript page exceptions in desktop smoke')
