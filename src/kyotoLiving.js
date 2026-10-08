@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import {rect,circle} from './collisionLogic.js'
 
 /**
  * Connected stylized Arashiyama corridor, all positions in game units.
@@ -108,6 +109,7 @@ const PEOPLE=[
   {x:-7,z:-81,range:4,mode:'photo',color:'#626a73',scale:1.04}
 ]
 export function createKyotoLiving(root,{reducedMotion=false}={}){
+  const staticColliders=[]
   const g=new THREE.Group();g.name='ARASHIYAMA living town'
   root.add(g)
   floor(g,0,0,300,300,'#82926e')
@@ -139,6 +141,8 @@ export function createKyotoLiving(root,{reducedMotion=false}={}){
     const z=3+j*8.3
     shop(g,-23,z,names[j],j%2?'sweets':'tea',j)
     shop(g,23,z+2,names[(j+3)%6],j%2?'tea':'sweets',j+1)
+    staticColliders.push(rect(-23,z,12,11,'shop-west-'+j))
+    staticColliders.push(rect(23,z+2,12,11,'shop-east-'+j))
   }
   // Destination markers aligned with connected paths.
   signedBoard(g,'KATSURA RIVER',-2,6.8,47,9.3,1.9)
@@ -149,6 +153,8 @@ export function createKyotoLiving(root,{reducedMotion=false}={}){
       const x=side*(8.5+(Math.abs(z)%4))
       bamboo(g,x,z,13+Math.abs(z%5))
       bamboo(g,x+side*3.5,z+2.1,15+Math.abs(z%3))
+      staticColliders.push(circle(x,z,.3,'bamboo'))
+      staticColliders.push(circle(x+side*3.5,z+2.1,.3,'bamboo'))
     }
   }
   // Autumn maples near Randen arrival, shops, riverbank, low-frequency foliage.
@@ -158,7 +164,7 @@ export function createKyotoLiving(root,{reducedMotion=false}={}){
     const x=(random()-.5)*260,z=(random()-.5)*240
     const nearMarket=z>-10&&z<57&&Math.abs(x)<45
     const nearWalk=Math.abs(x)<13||z>53&&z<102
-    if(!nearMarket&&!nearWalk)maple(g,x,z,random())
+    if(!nearMarket&&!nearWalk){maple(g,x,z,random());staticColliders.push(circle(x,z,.5,'maple'))}
   }
   for(let i=0;i<18;i++){
     const x=-140+i*16
@@ -172,6 +178,12 @@ export function createKyotoLiving(root,{reducedMotion=false}={}){
     box(g,8,2.5,z,.36,5,.38,material(i%2?'#dac89d':'#bc8d81',{emissive:'#6e4e6e',emissiveIntensity:.2}))
     box(g,8,5.1,z,1,.3,.9,'#504253')
   }
+  // Water is not a walkable sidewalk. Crossing is only possible inside
+  // the Togetsukyo bridge corridor; the southern bank stays accessible.
+  staticColliders.push(rect(-53,74,94,36,'Katsura water west'))
+  staticColliders.push(rect(53,74,94,36,'Katsura water east'))
+  // Decorative gate pillars are solid; leave the center pedestrian path free.
+  for(let i=0;i<7;i++)staticColliders.push(rect(8,-38+i*5.2,.36,.38,'Randen lights'))
   const npcs=PEOPLE.map((def,index)=>{
     const p=human(def.color,index%2?'#5f514c':'#3d4543','#ddbca4',def.scale)
     p.group.position.set(def.x,.1,def.z)
@@ -200,6 +212,8 @@ export function createKyotoLiving(root,{reducedMotion=false}={}){
   const rain=new THREE.Points(rainGeo,new THREE.PointsMaterial({color:'#d7e6ed',size:.12,transparent:true,opacity:.65}))
   rain.visible=false;g.add(rain)
   return {
+    colliders:staticColliders,
+    getDynamicColliders(){return npcs.map(n=>circle(n.group.position.x,n.group.position.z,.75,'pedestrian'))},
     setWeather(value){rain.visible=value==='drizzle'&&!reducedMotion;water.material.color.set(value==='drizzle'?'#607d88':'#5e95a5')},
     update(dt,now,weather,player){
       const t=now*.001
