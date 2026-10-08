@@ -1,0 +1,59 @@
+name: KISEKI PM Agent Hub
+on:
+  issue_comment:
+    types: [created]
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Dispatch AI agents or generate status digest
+        type: choice
+        required: true
+        default: status
+        options: [status, dispatch]
+      to:
+        description: Agent roles (ALL or X1,XO,T1)
+        type: string
+        required: false
+        default: ALL
+      task:
+        description: Explicit PM task for a dispatch
+        type: string
+        required: false
+  schedule:
+    - cron: '0 */6 * * *'
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: read
+
+concurrency:
+  group: kiseki-pm-hub
+  cancel-in-progress: false
+
+jobs:
+  coordinate:
+    if: >-
+      github.event_name != 'issue_comment' ||
+      (github.event.issue.number == 1 &&
+       github.event.comment.user.type != 'Bot' &&
+       !startsWith(github.event.comment.body, '[AUTO:') &&
+       !startsWith(github.event.comment.body, '[RUNNER:'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout trusted default-branch implementation
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run PM hub (issue-comment writes only)
+        run: node scripts/kiseki-agent-hub.mjs
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_MODEL: ${{ vars.OPENAI_MODEL || 'gpt-5-mini' }}
+          KISEKI_BOS_LOGIN: DevinEldrian
