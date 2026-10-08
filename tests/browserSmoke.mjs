@@ -16,6 +16,7 @@ try{
   await page.goto(url,{waitUntil:'domcontentloaded',timeout:30000})
   await page.locator('.canvas canvas').waitFor({state:'visible',timeout:25000})
   await page.waitForTimeout(900)
+  if(await page.locator('.error-backdrop').count())console.error('3D ERROR OVERLAY:',await page.locator('.error-backdrop').innerText())
   assert.equal(await page.locator('.error-backdrop').count(),0,'WebGL error overlay appeared')
   const size=await page.locator('.canvas canvas').evaluate(el=>[el.width,el.height])
   assert.ok(size[0]>=600&&size[1]>=350,'canvas dimensions too small')
