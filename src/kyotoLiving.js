@@ -208,6 +208,7 @@ export function createKyotoLiving(root,{reducedMotion=false}={}){
     g.add(p.group)
     return {...p,def,index}
   })
+  let lowPower=false
   const leaves=[]
   const leafGeo=new THREE.PlaneGeometry(.42,.6)
   const leafMat=material('#d68d48',{side:THREE.DoubleSide})
@@ -228,10 +229,20 @@ export function createKyotoLiving(root,{reducedMotion=false}={}){
   rainGeo.setAttribute('position',new THREE.BufferAttribute(rainPositions,3))
   const rain=new THREE.Points(rainGeo,new THREE.PointsMaterial({color:'#d7e6ed',size:.12,transparent:true,opacity:.65}))
   rain.visible=false;g.add(rain)
+  let rainEnabled=false
   return {
+    setPerformanceMode(value){
+      lowPower=!!value
+      for(const {leaf} of leaves)leaf.visible=!lowPower&&!reducedMotion
+      rain.visible=!lowPower&&!reducedMotion&&rainEnabled
+    },
     colliders:staticColliders,
     getDynamicColliders(){return npcs.map(n=>circle(n.group.position.x,n.group.position.z,.75,'pedestrian'))},
-    setWeather(value){rain.visible=value==='drizzle'&&!reducedMotion;water.material.color.set(value==='drizzle'?'#607d88':'#5e95a5')},
+    setWeather(value){
+      rainEnabled=value==='drizzle'
+      rain.visible=rainEnabled&&!reducedMotion&&!lowPower
+      water.material.color.set(rainEnabled?'#607d88':'#5e95a5')
+    },
     update(dt,now,weather,player){
       const t=now*.001
       for(const {group,leftLeg,rightLeg,leftArm,rightArm,def,index} of npcs){
@@ -250,7 +261,7 @@ export function createKyotoLiving(root,{reducedMotion=false}={}){
         leftArm.rotation.x=def.mode==='station'?-0.6:-swing*.6
         rightArm.rotation.x=def.mode==='photo'?-1.25+Math.sin(t*.7+index)*.12:def.mode==='vendor'?-0.7+Math.sin(t*.9)*.18:swing*.6
       }
-      if(!reducedMotion){
+      if(!reducedMotion&&!lowPower){
         for(const {leaf,baseX,baseZ,height,phase} of leaves){
           leaf.position.x=baseX+Math.sin(t*.7+phase)*1.2
           leaf.position.z=baseZ+Math.cos(t*.6+phase)*1.1
