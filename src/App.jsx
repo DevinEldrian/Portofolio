@@ -107,7 +107,7 @@ export default function App(){
     storyFocus.current?.focus()
     const close=e=>{if(e.key==='Escape'){e.preventDefault();setStoryId(null)}}
     window.addEventListener('keydown',close)
-    return()=>window.removeEventListener('keydown',close)
+    return()=>{window.removeEventListener('keydown',close);holder.current?.focus?.()}
   },[storyId])
   function inputButton(key,character,title){
     const release=()=>world.current?.setInput(key,false)
@@ -116,7 +116,7 @@ export default function App(){
       onPointerUp={release} onPointerCancel={release} onLostPointerCapture={release}>{character}</button>
   }
   return <div className="experience" style={{'--accent':active.accent}}>
-    <div className="canvas" ref={holder} role="img" aria-label={'Interactive 3D Japanese destination: '+active.city}/>
+    <div className="canvas" ref={holder} role="region" tabIndex={0} aria-label={'Interactive 3D Japanese destination: '+active.city}/>
     <div className="vignette" aria-hidden="true"/>
     <header className="header">
       <a className="brand" href="https://github.com/DevinEldrian" target="_blank" rel="noopener noreferrer" aria-label="Devin GitHub profile">
