@@ -4,6 +4,8 @@ import {move,nearStation} from './gameLogic.js'
 import {HOTSPOT_POSITIONS,nearestHotspot} from './hotspotLogic.js'
 import {HOTSPOTS} from './portfolioContent.js'
 import {CAMERA_DEFAULTS,cameraAfterInput,cameraPose} from './cameraLogic.js'
+import {createKyotoLiving} from './kyotoLiving.js'
+import {createRailCinematic} from './railCinematic.js'
 
 const STATION={x:20,z:-10}
 const EMPTY_KEYS=new Set()
@@ -69,8 +71,8 @@ function textBoard(g,place){
   const a=c.getContext('2d')
   a.fillStyle='#f0eadc';a.fillRect(0,0,512,200)
   a.fillStyle='#2c4545';a.textAlign='center'
-  a.font='bold 62px Arial';a.fillText('STATION',256,97)
-  a.font='28px Arial';a.fillText(place.city+' LINE',256,148)
+  a.font='bold 62px Arial';a.fillText(place.id==='kyoto'?'ARASHIYAMA':'STATION',256,97)
+  a.font='28px Arial';a.fillText(place.id==='kyoto'?'RANDEN TRAM · KYOTO':place.city+' LINE',256,148)
   const tex=new THREE.CanvasTexture(c);tex.colorSpace=THREE.SRGBColorSpace
   const mesh=new THREE.Mesh(new THREE.PlaneGeometry(8.4,3.1),new THREE.MeshBasicMaterial({map:tex,side:THREE.DoubleSide}))
   mesh.position.set(STATION.x,9.4,STATION.z+6.15);g.add(mesh)
@@ -118,7 +120,7 @@ function addStation(g,place){
     const zz=z-19+j*20
     block(g,x+25,3.3,zz,6.4,5.7,18.8,'#ebebdd')
     block(g,x+25,6.32,zz,6.6,.6,19,'#35494b')
-    block(g,x+25,2.35,zz,6.6,1.2,19,place.accent)
+    block(g,x+25,2.35,zz,6.6,1.2,19,place.id==='kyoto'?'#72519b':place.accent)
     for(let wz of [-6,-2,2,6]){
       block(g,x+21.7,4.46,zz+wz,.08,1.5,2.1,'#8cbdc0')
       block(g,x+28.3,4.46,zz+wz,.08,1.5,2.1,'#8cbdc0')
@@ -129,14 +131,6 @@ function addStation(g,place){
 }
 function decorate(g,id){
   const r=rng(({kyoto:1103,tokyo:138,hakone:331,kamakura:280})[id])
-  if(id==='kyoto'){
-    ground(g,0,0,280,280,'#829b7c')
-    ground(g,0,-18,15,190,'#b3a594',.055)
-    for(let z=-18;z>=-98;z-=22)torii(g,z,z===-18?1.1:1)
-    for(let z=-80;z<=75;z+=23){house(g,-20,z,'#a49a88');house(g,21,z+5,'#ab927c');lightPost(g,-9,z)}
-    for(let i=0;i<62;i++){const x=(r()-.5)*255,z=(r()-.5)*250;if(Math.abs(x)>34&&Math.hypot(x-STATION.x,z-STATION.z)>28)tree(g,x,z,r()<.76?'sakura':'normal',r)}
-    for(let i=0;i<7;i++)mountain(g,-130+i*43,-126,30+r()*32,'#7a9388')
-  }
   if(id==='tokyo'){
     ground(g,0,0,280,280,'#77818a')
     ground(g,0,0,24,275,'#46515c',.07)
@@ -219,6 +213,9 @@ export function createWorld(container,{onNearby,onBoard,onPosition,onError,onNea
   Object.assign(sun.shadow.camera,{left:-100,right:100,top:100,bottom:-100})
   scene.add(sun)
   const map=new THREE.Group();scene.add(map)
+  const rail=createRailCinematic(scene)
+  const reducedMotion=typeof window!=='undefined'&&window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches
+  let living=null,weather='golden'
   const person=avatarModel();scene.add(person.g)
   const circle=new THREE.Mesh(new THREE.CircleGeometry(1.8,24),new THREE.MeshBasicMaterial({color:'#000000',transparent:true,opacity:.19}))
   circle.rotation.x=-Math.PI/2;scene.add(circle)
@@ -231,10 +228,12 @@ export function createWorld(container,{onNearby,onBoard,onPosition,onError,onNea
   let cameraState={...CAMERA_DEFAULTS},drag=null,contextLost=false,disposed=false
   let player={x:0,z:16},current='kyoto',near=false,nearStory=null,stopped=false,raf=0,lastTime=performance.now(),frameCount=0,paused=false
   function setRegion(id){
-    const place=locationById(id);current=place.id;freeMeshes(map)
+    const place=locationById(id);current=place.id;living=null;freeMeshes(map)
     const bg=new THREE.Color(({kyoto:'#ead2b9',tokyo:'#b9b9c1',hakone:'#c3d2c6',kamakura:'#cadfe0'})[id]||'#ead2b9')
-    scene.background=bg;scene.fog=new THREE.FogExp2(bg,.0048)
-    decorate(map,id);addStation(map,place);if(id==='kyoto')addStoryKiosks(map)
+    scene.background=bg;scene.fog=new THREE.FogExp2(bg,.0038)
+    if(id==='kyoto')living=createKyotoLiving(map,{reducedMotion});else decorate(map,id)
+    addStation(map,place);if(id==='kyoto')addStoryKiosks(map)
+    living?.setWeather(weather)
     cameraObstacles.length=0
     map.traverse(node=>{if(node.isMesh&&node.userData.cameraBlocker)cameraObstacles.push(node)})
     cameraState={...CAMERA_DEFAULTS}
@@ -321,6 +320,11 @@ export function createWorld(container,{onNearby,onBoard,onPosition,onError,onNea
     raf=requestAnimationFrame(frame)
     const dt=Math.min(.05,Math.max(0,(now-lastTime)/1000));lastTime=now
     try{
+      if(rail.update(dt,now,camera,person,{reducedMotion})){
+        living?.update(dt,now,weather,player)
+        renderer.render(scene,camera)
+        return
+      }
       const p=move(player,paused?EMPTY_KEYS:keys,dt)
       player={x:p.x,z:p.z}
       person.g.position.set(player.x,.13+(p.moving?Math.abs(Math.sin(now*.014))*.12:0),player.z)
@@ -349,6 +353,7 @@ export function createWorld(container,{onNearby,onBoard,onPosition,onError,onNea
       if(n!==near){near=n;onNearby?.(near)}
       const h=current==='kyoto'?nearestHotspot(player):null
       if(h!==nearStory){nearStory=h;onNearHotspot?.(h)}
+      living?.update(dt,now,weather,player)
       if(++frameCount%8===0)onPosition?.({...player})
       renderer.render(scene,camera)
     }catch(e){stopped=true;cancelAnimationFrame(raf);onError?.(e?.message||'Rendering stopped unexpectedly.')}
@@ -356,6 +361,18 @@ export function createWorld(container,{onNearby,onBoard,onPosition,onError,onNea
   setRegion('kyoto');resize();raf=requestAnimationFrame(frame)
   return {
     setRegion,
+    setWeather(next){
+      weather=next==='drizzle'?'drizzle':'golden'
+      living?.setWeather(weather)
+      if(current==='kyoto'){
+        const sky=new THREE.Color(weather==='drizzle'?'#87969e':'#e7c8a0')
+        scene.background=sky;scene.fog.color.copy(sky)
+        sun.intensity=weather==='drizzle'?1.45:3
+        hemi.intensity=weather==='drizzle'?1.6:2.2
+      }
+      return weather
+    },
+    setJourneyPhase(phase){rail.setPhase(phase)},
     setInput(key,active){if(paused)return;if(active)keys.add(key);else keys.delete(key)},
     setInputEnabled(enabled){paused=!enabled;if(paused){keys.clear();drag=null}},
     board(){if(near)onBoard?.(current)},
@@ -371,7 +388,7 @@ export function createWorld(container,{onNearby,onBoard,onPosition,onError,onNea
       renderer.domElement.removeEventListener('pointercancel',orbitCancel)
       renderer.domElement.removeEventListener('lostpointercapture',orbitCancel)
       renderer.domElement.removeEventListener('wheel',zoom)
-      freeMeshes(map);freeMeshes(person.g)
+      freeMeshes(map);freeMeshes(person.g);rail.dispose()
       circle.geometry.dispose();circle.material.dispose()
       renderer.dispose();renderer.domElement.remove()
     }
