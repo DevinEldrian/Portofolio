@@ -1,6 +1,6 @@
 export const LOCATIONS = [
   {
-    id:'kyoto',number:'01',city:'KYOTO · ARASHIYAMA',jp:'嵐山',district:'ARASHIYAMA / RANDEN · KATSURA · SAGANO',section:'About',
+    id:'kyoto',number:'01',city:'KYOTO',jp:'嵐山',district:'ARASHIYAMA / RANDEN · KATSURA · SAGANO',section:'About',
     title:'Where my story begins.',description:'Begin at Randen Arashiyama Station. Follow Kyoto shops, the Katsura River, Togetsukyo Bridge and the Sagano bamboo path to discover my professional journey.',
     panel:'A different way to introduce myself',detail:'I’m Devin Eldrian Wijaya. Explore the landscape to learn how technology, quality assurance, and immersive experiences connect in my work.',
     points:['Based in Jakarta, Indonesia','Quality-minded by design','Interested in interactive technology'],accent:'#ed8b74'
