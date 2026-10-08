@@ -96,17 +96,22 @@ function human(outfit='#425a66',pants='#36414a',skin='#deb998',scale=1){
   for(const [arm,x] of [[leftArm,-.82],[rightArm,.82]]){
     arm.position.set(x,3.75,0);box(arm,0,-.7,0,.42,1.35,.48,outfit);group.add(arm)
   }
+  // Clothes and props increase silhouette readability without unlicensed art.
+  const scarf=box(group,0,3.95,.15,1.12,.22,.72,'#c3ad8d')
+  scarf.castShadow=false
   return {group,leftLeg,rightLeg,leftArm,rightArm}
 }
 const PEOPLE=[
-  {x:11,z:-9,range:7,mode:'station',color:'#45586f',scale:1},
-  {x:16,z:7,range:9,mode:'walk',color:'#895f55',scale:.93},
+  // NPC navigation stays on the public pedestrian lane, not inside
+  // solid souvenir shop walls or the stationary Randen car.
+  {x:6,z:-11,range:3,mode:'station',color:'#45586f',scale:1},
+  {x:7,z:7,range:6,mode:'walk',color:'#895f55',scale:.93},
   {x:-13,z:17,range:0,mode:'vendor',color:'#556b59',scale:1},
-  {x:8,z:21,range:7,mode:'walk',color:'#8c6b61',scale:1.08},
-  {x:13,z:41,range:8,mode:'walk',color:'#5a657f',scale:.95},
+  {x:-7,z:21,range:6,mode:'walk',color:'#8c6b61',scale:1.08},
+  {x:7,z:41,range:6,mode:'walk',color:'#5a657f',scale:.95},
   {x:-13,z:50,range:0,mode:'photo',color:'#a17c59',scale:1},
-  {x:9,z:-61,range:7,mode:'walk',color:'#6d7c62',scale:.97},
-  {x:-7,z:-81,range:4,mode:'photo',color:'#626a73',scale:1.04}
+  {x:0,z:-61,range:7,mode:'walk',color:'#6d7c62',scale:.97},
+  {x:-7,z:-81,range:0,mode:'photo',color:'#626a73',scale:1.04}
 ]
 export function createKyotoLiving(root,{reducedMotion=false}={}){
   const staticColliders=[]
@@ -187,7 +192,19 @@ export function createKyotoLiving(root,{reducedMotion=false}={}){
   const npcs=PEOPLE.map((def,index)=>{
     const p=human(def.color,index%2?'#5f514c':'#3d4543','#ddbca4',def.scale)
     p.group.position.set(def.x,.1,def.z)
-    if(def.mode==='vendor')p.group.rotation.y=1.2
+    if(def.mode==='vendor'){
+      const tray=box(p.group,0,2.15,-.62,2.1,.16,.88,'#bd9465')
+      tray.castShadow=false
+      for(let k=-1;k<=1;k++)box(p.group,k*.58,2.38,-.62,.42,.25,.5,'#d8bd8e')
+    }
+    if(def.mode==='photo'){
+      // Phone is carried in hand and raised during the photo idle beat.
+      box(p.rightArm,0,-1.35,-.25,.35,.52,.15,'#333b42')
+    }
+    if(def.mode==='station'){
+      // Route leaflet held by a waiting passenger.
+      box(p.leftArm,0,-1.15,-.25,.5,.65,.08,'#efe4c9')
+    }
     g.add(p.group)
     return {...p,def,index}
   })
@@ -230,8 +247,8 @@ export function createKyotoLiving(root,{reducedMotion=false}={}){
         group.rotation.y=walking?(Math.cos(phase)>0?0:Math.PI):def.mode==='photo'?-.5:1.3
         const swing=walking&&!reducedMotion?Math.sin(t*3+index)*.5:0
         leftLeg.rotation.x=swing;rightLeg.rotation.x=-swing
-        leftArm.rotation.x=def.mode==='photo'?-.9:-swing*.6
-        rightArm.rotation.x=def.mode==='vendor'?-.6:swing*.6
+        leftArm.rotation.x=def.mode==='station'?-0.6:-swing*.6
+        rightArm.rotation.x=def.mode==='photo'?-1.25+Math.sin(t*.7+index)*.12:def.mode==='vendor'?-0.7+Math.sin(t*.9)*.18:swing*.6
       }
       if(!reducedMotion){
         for(const {leaf,baseX,baseZ,height,phase} of leaves){
