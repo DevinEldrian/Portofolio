@@ -11,6 +11,7 @@ import {walkSurfaceY} from './terrainLogic.js'
 import {materialPBR,disposePBR} from './pbrMaterials.js'
 import {createJapanDistrict} from './japanDistricts.js'
 import {makeTraveler} from './travelerModel.js'
+import {enableRiggedTraveler} from './riggedCharacter.js'
 import {EffectComposer} from 'three/addons/postprocessing/EffectComposer.js'
 import {RenderPass} from 'three/addons/postprocessing/RenderPass.js'
 import {UnrealBloomPass} from 'three/addons/postprocessing/UnrealBloomPass.js'
@@ -241,6 +242,7 @@ export function createWorld(container,{onNearby,onBoard,onPosition,onError,onNea
   const reducedMotion=typeof window!=='undefined'&&window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches
   let living=null,weather='golden'
   const person=makeTraveler();scene.add(person.g)
+  const avatarAnimation=enableRiggedTraveler(person)
   const circle=new THREE.Mesh(new THREE.CircleGeometry(1.8,24),new THREE.MeshBasicMaterial({color:'#000000',transparent:true,opacity:.19}))
   circle.rotation.x=-Math.PI/2;scene.add(circle)
   const keys=new Set()
@@ -254,7 +256,7 @@ export function createWorld(container,{onNearby,onBoard,onPosition,onError,onNea
   let player={x:0,z:16},current='kyoto',near=false,nearStory=null,stopped=false,raf=0,lastTime=performance.now(),frameCount=0,paused=false
   // Local-only QA diagnostics. Vite strips this from production builds.
   if(import.meta.env.DEV)window.__KISEKI_QA__={
-    snapshot:()=>({x:player.x,z:player.z,frameCount,paused,keys:[...keys],stopped,region:current}),
+    snapshot:()=>({x:player.x,z:player.z,frameCount,paused,keys:[...keys],stopped,region:current,character:avatarAnimation.status()}),
     teleportForCollisionTest(p){
       if(Number.isFinite(p?.x)&&Number.isFinite(p?.z)&&Math.abs(p.x)<=120&&Math.abs(p.z)<=120)
         player={x:p.x,z:p.z}
@@ -291,7 +293,7 @@ export function createWorld(container,{onNearby,onBoard,onPosition,onError,onNea
       solidFootprints.push(rect(pos.x,pos.z,2.6,.5,'CV information sign'))
     cameraState={...CAMERA_DEFAULTS}
     player={x:0,z:16};person.g.position.set(0,.1,16)
-    const start=cameraPose({x:player.x,y:3,z:player.z},cameraState)
+    const start=cameraPose({x:player.x,y:1.55,z:player.z},cameraState)
     camera.position.set(start.position.x,start.position.y,start.position.z)
     camera.lookAt(start.target.x,start.target.y,start.target.z)
     near=false;nearStory=null;onNearby?.(false);onNearHotspot?.(null);onPosition?.(player)
@@ -388,13 +390,14 @@ export function createWorld(container,{onNearby,onBoard,onPosition,onError,onNea
       const walked=p.moving&&Math.hypot(next.x-player.x,next.z-player.z)>.002
       player={x:next.x,z:next.z}
       const footing=walkSurfaceY(current,player)
-      person.g.position.set(player.x,footing+(walked?Math.abs(Math.sin(now*.014))*.12:0),player.z)
+      person.g.position.set(player.x,footing+(walked?Math.abs(Math.sin(now*.014))*.025:0),player.z)
       if(p.heading!==null){const a=Math.atan2(Math.sin(p.heading-person.g.rotation.y),Math.cos(p.heading-person.g.rotation.y));person.g.rotation.y+=a*.16}
       const swing=walked?Math.sin(now*.012)*.44:0
       person.legA.rotation.x=swing;person.legB.rotation.x=-swing
       person.armA.rotation.x=-swing*.75;person.armB.rotation.x=swing*.75
+      avatarAnimation.update(dt,{moving:walked,running:keys.has('shift')})
       circle.position.set(player.x,Math.max(.08,footing-.05),player.z)
-      const pose=cameraPose({x:player.x,y:3,z:player.z},cameraState)
+      const pose=cameraPose({x:player.x,y:1.55,z:player.z},cameraState)
       cameraFrom.set(pose.target.x,pose.target.y,pose.target.z)
       cameraDesired.set(pose.position.x,pose.position.y,pose.position.z)
       cameraDirection.copy(cameraDesired).sub(cameraFrom)
@@ -405,9 +408,9 @@ export function createWorld(container,{onNearby,onBoard,onPosition,onError,onNea
         cameraRaycaster.near=.25;cameraRaycaster.far=length
         const obstruction=cameraRaycaster.intersectObjects(cameraObstacles,false)[0]
         if(obstruction&&obstruction.distance<length)
-          cameraDesired.copy(cameraFrom).addScaledVector(cameraDirection,Math.max(2.6,obstruction.distance-.8))
+          cameraDesired.copy(cameraFrom).addScaledVector(cameraDirection,Math.max(.9,obstruction.distance-.35))
       }
-      cameraDesired.y=Math.max(2.5,cameraDesired.y)
+      cameraDesired.y=Math.max(1.35,cameraDesired.y)
       camera.position.lerp(cameraDesired,Math.min(1,dt*8))
       camera.lookAt(pose.target.x,pose.target.y,pose.target.z)
       const n=nearStation(player,STATION)
@@ -460,6 +463,7 @@ export function createWorld(container,{onNearby,onBoard,onPosition,onError,onNea
       renderer.domElement.removeEventListener('pointercancel',orbitCancel)
       renderer.domElement.removeEventListener('lostpointercapture',orbitCancel)
       renderer.domElement.removeEventListener('wheel',zoom)
+      avatarAnimation.dispose()
       freeMeshes(map);freeMeshes(person.g);rail.dispose()
       circle.geometry.dispose();circle.material.dispose()
       composer.dispose()
