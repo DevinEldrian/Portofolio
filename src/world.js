@@ -251,7 +251,11 @@ export function createWorld(container,{onNearby,onBoard,onPosition,onError,onNea
   let player={x:0,z:16},current='kyoto',near=false,nearStory=null,stopped=false,raf=0,lastTime=performance.now(),frameCount=0,paused=false
   // Local-only QA diagnostics. Vite strips this from production builds.
   if(import.meta.env.DEV)window.__KISEKI_QA__={
-    snapshot:()=>({x:player.x,z:player.z,frameCount,paused,keys:[...keys],stopped,region:current})
+    snapshot:()=>({x:player.x,z:player.z,frameCount,paused,keys:[...keys],stopped,region:current}),
+    teleportForCollisionTest(p){
+      if(Number.isFinite(p?.x)&&Number.isFinite(p?.z)&&Math.abs(p.x)<=120&&Math.abs(p.z)<=120)
+        player={x:p.x,z:p.z}
+    }
   }
   function setRegion(id){
     const place=locationById(id);current=place.id;living=null;freeMeshes(map)
