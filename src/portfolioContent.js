@@ -47,7 +47,7 @@ export const HOTSPOTS = Object.freeze([
     teaser: 'A strong product combines curiosity, empathy and reliable execution.',
     story: 'My path connects UI work with systematic quality assurance. I enjoy understanding how an experience feels to users and how its underlying behavior stands up to real-world expectations.',
     evidence: [
-      'University studies: Business Information Technology, AI for Business major.',
+      'Education: Master of Information Technology (AI focus, Feb 2026–present); Bachelor of Information Technology (Business Information Technology major, Sep 2021–Dec 2025).',
       'Professional focus: software testing, QA, UI improvements and collaboration.',
       'Working skills include test case design, SQL and Python.'
     ],
