@@ -1,12 +1,12 @@
 export const LOCATIONS = [
   {
-    id:'kyoto',number:'01',city:'KYOTO',jp:'京都',district:'FUSHIMI / HISTORIC DISTRICT',section:'About',
-    title:'Where my story begins.',description:'Every journey starts with curiosity. Mine is driven by quality, thoughtful problem-solving, and building things that feel alive.',
+    id:'kyoto',number:'01',city:'KYOTO · ARASHIYAMA',jp:'嵐山',district:'ARASHIYAMA / RANDEN · KATSURA · SAGANO',section:'About',
+    title:'Where my story begins.',description:'Begin at Randen Arashiyama Station. Follow Kyoto shops, the Katsura River, Togetsukyo Bridge and the Sagano bamboo path to discover my professional journey.',
     panel:'A different way to introduce myself',detail:'I’m Devin Eldrian Wijaya. Explore the landscape to learn how technology, quality assurance, and immersive experiences connect in my work.',
     points:['Based in Jakarta, Indonesia','Quality-minded by design','Interested in interactive technology'],accent:'#ed8b74'
   },
   {
-    id:'tokyo',number:'02',city:'TOKYO',jp:'東京',district:'SHIBUYA / ELECTRIC DISTRICT',section:'Projects',
+    id:'tokyo',number:'02',city:'TOKYO',jp:'東京',district:'SHIBUYA / AKIHABARA — DIFFERENT TOKYO DISTRICTS',section:'Projects',
     title:'Ideas in motion.',description:'The city of prototypes and experiments. A space for the things I build and the challenges I love to solve.',
     panel:'Selected projects & experiments',detail:'This destination is a showcase for verified case studies, technical prototypes, and interactive builds. More projects will be added here.',
     points:['Web engineering explorations','Interactive 3D experiences','Project details coming soon'],accent:'#b1bafa'
